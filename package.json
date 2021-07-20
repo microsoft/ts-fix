@@ -11,51 +11,24 @@
     "node": ">=10"
   },
   "scripts": {
-    "start": "tsdx watch",
-    "build": "tsdx build",
-    "test": "tsdx test",
-    "lint": "tsdx lint",
-    "prepare": "tsdx build",
-    "size": "size-limit",
-    "analyze": "size-limit --why"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "tsdx lint"
-    }
-  },
-  "prettier": {
-    "printWidth": 80,
-    "semi": true,
-    "singleQuote": true,
-    "trailingComma": "es5"
+    "start": "tsc -p . --watch",
+    "build": "tsc -p .",
+    "test": "jest",
+    "prepare": "tsc -p ."
   },
   "name": "ts-transform-project",
   "author": "Isabel Duan",
-  "module": "dist/mylib.esm.js",
-  "size-limit": [
-    {
-      "path": "dist/mylib.cjs.production.min.js",
-      "limit": "10 KB"
-    },
-    {
-      "path": "dist/mylib.esm.js",
-      "limit": "10 KB"
-    }
-  ],
   "devDependencies": {
-    "@size-limit/preset-small-lib": "^4.12.0",
+    "@types/jest": "^26.0.24",
     "@types/lodash": "^4.14.171",
+    "@types/yargs": "^15.0.13",
     "esbuild-jest": "^0.5.0",
-    "husky": "^6.0.0",
-    "size-limit": "^4.12.0",
-    "tsdx": "^0.14.1",
-    "tslib": "^2.3.0",
+    "jest": "^27.0.6",
     "typescript": "^4.3.4"
   },
   "dependencies": {
     "@ts-morph/bootstrap": "^0.10.0",
-    "commander": "^7.2.0",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "yargs": "^16.2.0"
   }
 }
