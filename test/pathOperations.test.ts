@@ -25,3 +25,7 @@ const nested_argv  = {
 //     expect(getRelativePath(subfolderPath, opt)).toEqual(path.normalize("src\\subfolder1"));
 
 // })
+
+test("placeholder", () => {
+    expect([]).toEqual([]);
+})

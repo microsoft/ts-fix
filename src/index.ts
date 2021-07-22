@@ -14,25 +14,21 @@ export interface Options {
   fixName: string[];
 }
 
-
-
 export async function codefixProject(opt:Options) {
-  const firstPass = await applyCodefixesOverProject(opt);
+  const firstPassLeftover = await applyCodefixesOverProject(opt);
 
   // if overlap/non executed changes for some reason, redo process 
-  if (!firstPass) {
+  if (firstPassLeftover.length > 0) {
     // maybe in applycodefixesoverproject we have an exit if no changes?
     // maybe emit some sort of diagnostic/statement? 
     // might need some other type/flag with more options besides boolean 
     return applyCodefixesOverProject(opt);
   }
 
-  return firstPass;
+  return firstPassLeftover;
 }
 
-
-
-export async function applyCodefixesOverProject(opt: Options): Promise<boolean> {
+export async function applyCodefixesOverProject(opt: Options): Promise<TextChange[]> {
   // tsconfigPath: string, errorCode?: number|undefined
   // get project object
   let project = await getProject(opt.tsconfigPath);
@@ -91,7 +87,6 @@ export function filterDiagnosticsByErrorCode(diagnostics: readonly Diagnostic[],
   // if errorCodes were passed in, only use the specified errors
   if (opt.errorCode.length !== 0) {
     return _.filter(diagnostics, function (d) {return opt.errorCode.includes(d.code)});
-    // TODO: maybe add more sophisiticated method of error matching?
   }
   // otherwise, use all errors
   return diagnostics;
@@ -100,18 +95,6 @@ export function filterDiagnosticsByErrorCode(diagnostics: readonly Diagnostic[],
 function getFileTextChangesFromCodeFix(codefix: CodeFixAction): readonly FileTextChanges[] {
   return codefix.changes;
 }
-
-// function getTextChangesFromFileChanges(change : FileTextChanges) : readonly TextChange[] {
-//   // do we need to make sure all codefixes apply to same file? my thinking is yes.
-//   return change.textChanges;
-// }
-
-// function getTextChangesForCodeFix(codefix: CodeFixAction) : readonly TextChange[] {
-//   // get 1d list of fileChanges list from list of codefixactions
-//   const changesFromCodefix = codefix.changes;
-//   const textChanges = _.flatten(changesFromCodefix.map(getTextChangesFromFileChanges));
-//   return textChanges;
-// }
 
 export function getTextChangeDict(codefixes: readonly CodeFixAction[], opt: Options): Map<string, TextChange[]> {
   let textChangeDict = new Map<string, TextChange[]>();
@@ -137,7 +120,13 @@ export function getTextChangeDict(codefixes: readonly CodeFixAction[], opt: Opti
   return textChangeDict;
 }
 
-function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], opt: Options): CodeFixAction[] {
+export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], opt: Options): readonly CodeFixAction[] { //tested
+  if (opt.fixName.length === 0) {
+    // empty argument behavior... currently, we just keep all fixes if none are specified
+    return codefixes;
+  }
+  // cannot sort by fixId right now since fixId is a {}
+  // do we want to distinguish the case when no codefixes are picked? (no hits)
   return codefixes.filter(function (codefix) {return  opt.fixName.includes(codefix.fixName);});
 }
 
@@ -145,26 +134,19 @@ function getFileNameAndTextChangesFromCodeFix(ftchanges: FileTextChanges): [stri
   return [ftchanges.fileName, [...ftchanges.textChanges]];
 }
 
-function doAllTextChanges(project: Project, textChanges: Map<string, TextChange[]>, opt: Options): boolean {
-  let leftoverChanges = false;
+function doAllTextChanges(project: Project, textChanges: Map<string, TextChange[]>, opt: Options): TextChange[] {
+  let notAppliedChanges =<TextChange[]>[];
   textChanges.forEach((fileFixes, fileName) => {
     const sourceFile = project.getSourceFile(fileName);
 
     if (sourceFile !== undefined) {
       const originalFileContents = sourceFile.text;
-      // let fileFixes = textChanges.get(fileName);
-
-      // if (fileFixes === undefined) {
-      //   fileFixes = <TextChange[]> [];
-      // }
 
       // collision is true if there were changes that were not applied 
       // also performs the writing to the file
-      let [collision, newFileContents] = applyCodefixesInFile(originalFileContents, fileFixes);
+      let [out, newFileContents] = applyCodefixesInFile(originalFileContents, fileFixes);
+      notAppliedChanges = out;
       writeToFile(fileName, newFileContents, opt);
-      if (collision) {
-        leftoverChanges = collision;
-      }
     }
 
     else {
@@ -172,12 +154,12 @@ function doAllTextChanges(project: Project, textChanges: Map<string, TextChange[
     }
   });
 
-  return leftoverChanges;
+  return notAppliedChanges;
 }
 
-function applyCodefixesInFile(originalContents: string, textChanges: TextChange[]):  [ boolean, string] {
+function applyCodefixesInFile(originalContents: string, textChanges: TextChange[]):  [TextChange[], string] {
   // sort textchanges by start
-  const sortedFixList = textChanges.sort((a, b) => a.span.start - b.span.start);
+  const sortedFixList = sortChangesByStart(textChanges);
 
   // take some sort of issue (or none) with overlapping textchanges
   const [filteredFixList, notAppliedFixes] = filterOverlappingFixes(sortedFixList);
@@ -187,18 +169,25 @@ function applyCodefixesInFile(originalContents: string, textChanges: TextChange[
   
   // return 
   // if all fixes have been applied, then it is False that we expect to do another pass
-  return [notAppliedFixes.length === 0, newFileContents];
+  return [notAppliedFixes, newFileContents];
+}
+
+export function sortChangesByStart(textChanges: TextChange[]) : TextChange[] { // tested
+  // what if two changes start at the same place but have differnt lengths?
+      // currently the shorter one is put first 
+      // ignores text content of the changes
+  return textChanges.sort((a, b) => {
+    return (a.span.start - b.span.start === 0) ? a.span.length - b.span.length : a.span.start - b.span.start 
+});
 }
 
 
-export function filterOverlappingFixes(sortedFixList: TextChange[]): [TextChange[], TextChange[]] { //TODO: 1 test this function
+export function filterOverlappingFixes(sortedFixList: TextChange[]): [TextChange[], TextChange[]] { // tested
   let filteredList = <TextChange[]>[];
   let droppedList = <TextChange[]>[];
   let currentEnd = -1;
   // why is 'fix' in the line below a string[], while sortedFixList is Textchange[]?
-  // for (const fix in sortedFixList) {
-  //   filteredList + [fix];
-  // }
+
   for (let i = 0; i < sortedFixList.length; i++) {
     let fix = sortedFixList[i];
     if (fix.span.start > currentEnd) {
@@ -228,7 +217,7 @@ export function doTextChanges(fileText: string, textChanges: readonly TextChange
   return fileText;
 }
 
-export function doTextChangeOnString(currentFileText: string, change: TextChange): string {
+export function doTextChangeOnString(currentFileText: string, change: TextChange): string { // tested
   const prefix = currentFileText.substring(0, change.span.start);
   const middle = change.newText;
   const suffix = currentFileText.substring(change.span.start + change.span.length);
@@ -249,6 +238,7 @@ function createDirectory(directoryPath: string) {
   fs.mkdir(directoryPath, {recursive :true}, () => {});
 }
 
+// TODO: !!! aah ok so i dont know if i need these down here anymore... restructuring needed?
 
 function getOutputFilePath(filePath: string, opt: Options): string {
   const fileName = getRelativePath(filePath, opt);
@@ -263,11 +253,10 @@ export function getDirectory(filePath:string) :string {
   return filePath.substring(filePath.length - getFileName(filePath).length)
 }
 
-function getOutputBaseFolder( opt: Options):string {
+function getOutputBaseFolder(opt: Options):string {
   return opt.outputFolder;
 }
 
-export function getRelativePath(filePath: string, opt: Options): string{
-  const baseFolder = opt.tsconfigPath.substring(opt.tsconfigPath.length - "tsconfig.json".length);
-  return filePath.substring(baseFolder.length, filePath.length);
+export function getRelativePath(filePath: string, opt: Options): string{ 
+  return path.relative(getDirectory(opt.tsconfigPath), filePath);
 }

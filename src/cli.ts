@@ -1,8 +1,8 @@
+// todo: shebang, I don't know enough about how this works, and can't really find good explaination about it
+
 import yargs, { boolean, string } from 'yargs';
 import path from "path";
 import { Options, codefixProject } from '.';
-
-
 
 const argv = yargs(process.argv.slice(2))
             .scriptName("codefix")
@@ -12,6 +12,10 @@ const argv = yargs(process.argv.slice(2))
                 description: "name or path to project's tsconfig",
                 type: "string",
                 nargs: 1
+            })
+            .option("file", {
+                description: "files to codefix. Not implemented yet.",
+                type: "string"
             })
             .option("e", {
                 alias: "errorCode",
@@ -23,30 +27,30 @@ const argv = yargs(process.argv.slice(2))
                 describe: "names of codefixes to apply",
                 type: "string"
             }) 
-            .option("r",
-             {
-                alias: "replace",
-                describe: "include flag if code-fixed code should be emitted into original file (overwrites original file)",
-                type: "boolean"
-            })
-            .option("o", {
-                alias: "outputDirectory", 
-                describe: "the output directory. Ignored if -r is true",
-                type: "string"
+            .option("r", {
+               alias: "replace",
+               describe: "Default: True. Set flag to false if code-fixed code should be emitted into original file (overwrites original file)",
+               type: "boolean"
+           })
+           .option("o", {
+            alias: "outputDirectory", 
+            describe: "the output directory. Only used if -r is explicitly false (--no-r)",
+            type: "string"
             }).argv;
-          
-const {t, e, o, f, r} = argv;
 
-export function makeOptions(cwd:string, argv:any) : Options {
+// Later task : what if wanted to include flag for specific files only (also -f) or 
+
+export function makeOptions(cwd:string, argv:any) : Options { // Tested
     const {t, e, o, f, r} = argv;
+    let tsconfigPath = (t===undefined) ? path.resolve(cwd, "tsconfig.json") : path.resolve(t);
     return  {
-        tsconfigPath : (t===undefined) ? path.resolve(cwd, "tsconfig.json") : path.resolve(t),
-        outputFolder : (r===true) ? path.resolve(cwd) : (o===undefined) ? path.resolve(cwd, "../Output") : path.resolve(o),
+        tsconfigPath : tsconfigPath,
+        // default should be to replace
+        outputFolder : (r===true||r===undefined) ? path.dirname(tsconfigPath) : (o===undefined) ? path.resolve(path.dirname(tsconfigPath), "../Output") : path.resolve(o),
         errorCode : (e===undefined) ? [] : (typeof e === "number") ? [e] : e,
-        fixName: (f===undefined) ? [] :  (typeof f === "string") ? [f] : f,
+        fixName : (f===undefined) ? [] :  (typeof f === "string") ? [f] : f,
     }
 }
-
 
 
 codefixProject(makeOptions(process.cwd(), argv));
