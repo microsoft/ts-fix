@@ -1,9 +1,9 @@
 import path from "path";
-import { CodeFixAction, Diagnostic, FileTextChanges, getDefaultFormatCodeSettings, getOriginalNode, TextChange } from "typescript";
-import { createProject, Project } from "@ts-morph/bootstrap";
+import type { CodeFixAction, Diagnostic, FileTextChanges, getDefaultFormatCodeSettings, TextChange } from "typescript";
 import os from "os";
 import fs from "fs";
 import _ from "lodash";
+import { createProject, Project } from "./ts";
 // export const tsConfigFilePathDefault = path.resolve(__dirname, "../test/exampleTest/tsconfig.json");
 // const outputFolderDefault = path.resolve(__dirname, "../test/exampleTestOutput");
 
@@ -31,7 +31,11 @@ export async function codefixProject(opt:Options) {
 export async function applyCodefixesOverProject(opt: Options): Promise<TextChange[]> {
   // tsconfigPath: string, errorCode?: number|undefined
   // get project object
-  let project = await getProject(opt.tsconfigPath);
+  const project = createProject({ tsConfigFilePath: opt.tsconfigPath });
+  if (!project) {
+    // TODO: graceful error message reporting
+    throw new Error("Could not create project");
+  }
 
   // pull all codefixes.
   const diagnosticsPerFile = await getDiagnostics(project);
@@ -53,19 +57,15 @@ export async function applyCodefixesOverProject(opt: Options): Promise<TextChang
   return leftoverChanges;
 }
 
-export async function getProject(tsConfigFilePath: string): Promise<Project> {
-  return createProject({ tsConfigFilePath });
-}
-
 export function getDiagnostics(project: Project): (readonly Diagnostic[])[] {
-  const diagnostics = project.getSourceFiles().map(function (file) {
-    return project.createProgram().getSemanticDiagnostics(file);
+  const diagnostics = project.program.getSourceFiles().map(function (file) {
+    return project.program.getSemanticDiagnostics(file);
   });
   return diagnostics;
 }
 
 export function getCodeFixesForFile(project: Project, diagnostics: readonly Diagnostic[], opt: Options): readonly CodeFixAction[] {
-  const service = (project).getLanguageService();
+  const service = project.languageService;
   const filteredDiagnostics = filterDiagnosticsByErrorCode(diagnostics,opt);
   const codefixes = (<CodeFixAction[]>[]).concat.apply([], filteredDiagnostics.map(function (d) {
     if (d.file && d.start !== undefined && d.length !== undefined) {
@@ -74,7 +74,7 @@ export function getCodeFixesForFile(project: Project, diagnostics: readonly Diag
         d.start,
         d.start + d.length,
         [d.code],
-        getDefaultFormatCodeSettings(os.EOL),
+        project.ts.getDefaultFormatCodeSettings(os.EOL),
         {});
     } else {
       return [];
@@ -137,7 +137,7 @@ function getFileNameAndTextChangesFromCodeFix(ftchanges: FileTextChanges): [stri
 function doAllTextChanges(project: Project, textChanges: Map<string, TextChange[]>, opt: Options): TextChange[] {
   let notAppliedChanges =<TextChange[]>[];
   textChanges.forEach((fileFixes, fileName) => {
-    const sourceFile = project.getSourceFile(fileName);
+    const sourceFile = project.program.getSourceFile(fileName);
 
     if (sourceFile !== undefined) {
       const originalFileContents = sourceFile.text;
