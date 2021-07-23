@@ -1,8 +1,9 @@
-// todo: shebang, I don't know enough about how this works, and can't really find good explaination about it
+#!/usr/bin/env node
 
+import { writeFileSync } from 'fs';
 import yargs, { boolean, string } from 'yargs';
 import path from "path";
-import { Options, codefixProject } from '.';
+import { Options, codefixProject, Host } from '.';
 
 const argv = yargs(process.argv.slice(2))
             .scriptName("codefix")
@@ -52,5 +53,44 @@ export function makeOptions(cwd:string, argv:any) : Options { // Tested
     }
 }
 
+const cliHost: Host = {
+    log: console.log.bind(console),
+    writeFile: (fileName, content) => writeFileSync(fileName, content, 'utf8'),
+};
 
-codefixProject(makeOptions(process.cwd(), argv));
+// class TestHost implements Host {
+//     private filesWritten = new Map<string, string>();
+//     log() {}
+//     writeFile(fileName: string, content: string) {
+//         this.filesWritten.set(fileName, content);
+//     }
+
+//     getChangedFile(fileName: string) {
+//         return this.filesWritten.get(fileName);
+//     }
+// }
+
+// runCli('--tsconfig ./blah/whatever/tsconfig.json --fixNames 23423', testHost);
+// logs: [ ... ]
+// changedFiles: [ ... ]
+
+function h(exit:boolean):string {
+    if (exit) {
+        process.exit(1);
+    }
+    
+    return "jeijij";
+}
+
+console.log(h(true));
+
+console.log("hi");
+
+
+// codefixProject(makeOptions(process.cwd(), argv), cliHost);
+// print out how many errors matched/fixes matched
+
+// print out files changed
+
+// overlapping errors (matched changes that were not applied)
+

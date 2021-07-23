@@ -7,6 +7,19 @@ import _ from "lodash";
 // export const tsConfigFilePathDefault = path.resolve(__dirname, "../test/exampleTest/tsconfig.json");
 // const outputFolderDefault = path.resolve(__dirname, "../test/exampleTestOutput");
 
+export interface Logger {
+  (...args: any[]): void;
+  error?(...args: any[]): void;
+  warn?(...args: any[]): void;
+  info?(...args: any[]): void;
+  verbose?(...args: any[]): void;
+}
+
+export interface Host {
+  writeFile(fileName: string, content: string): void;
+  log: Logger;
+}
+
 export interface Options {
   tsconfigPath: string;
   outputFolder: string;
@@ -14,7 +27,7 @@ export interface Options {
   fixName: string[];
 }
 
-export async function codefixProject(opt:Options) {
+export async function codefixProject(opt:Options, host: Host) {
   const firstPassLeftover = await applyCodefixesOverProject(opt);
 
   // if overlap/non executed changes for some reason, redo process 
@@ -24,6 +37,10 @@ export async function codefixProject(opt:Options) {
     // might need some other type/flag with more options besides boolean 
     return applyCodefixesOverProject(opt);
   }
+  host;
+
+  // host.log("blah blah blah");
+  // host.log.verbose("asdfasdfasdf");
 
   return firstPassLeftover;
 }
@@ -232,6 +249,7 @@ function writeToFile(fileName: string, fileContents: string, opt: Options): void
     createDirectory(writeToDirectory);
   }
   fs.writeFileSync(writeToFileName , fileContents);
+  console.log("Updated " + writeToFileName); //TODo: the print statment >:
 }
 
 function createDirectory(directoryPath: string) {
