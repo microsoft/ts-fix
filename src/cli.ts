@@ -58,33 +58,11 @@ const cliHost: Host = {
     writeFile: (fileName, content) => writeFileSync(fileName, content, 'utf8'),
 };
 
-// class TestHost implements Host {
-//     private filesWritten = new Map<string, string>();
-//     log() {}
-//     writeFile(fileName: string, content: string) {
-//         this.filesWritten.set(fileName, content);
-//     }
 
-//     getChangedFile(fileName: string) {
-//         return this.filesWritten.get(fileName);
-//     }
-// }
 
 // runCli('--tsconfig ./blah/whatever/tsconfig.json --fixNames 23423', testHost);
 // logs: [ ... ]
 // changedFiles: [ ... ]
-
-function h(exit:boolean):string {
-    if (exit) {
-        process.exit(1);
-    }
-    
-    return "jeijij";
-}
-
-console.log(h(true));
-
-console.log("hi");
 
 
 // codefixProject(makeOptions(process.cwd(), argv), cliHost);
