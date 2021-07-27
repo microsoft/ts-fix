@@ -33,32 +33,38 @@ const codefixes : CodeFixAction[] = [
 test("filterCodeFixesByFixName_noNamesPassedIn", () => {
     const opt = makeOptions(process.cwd(), {});
     // empty argument behavior... currently, we just keep all fixes if none are specified
-    expect(filterCodeFixesByFixName(codefixes, opt)).toEqual(codefixes);
+    const result = filterCodeFixesByFixName(codefixes, opt);
+    expect(result[0]).toEqual(codefixes);
 })
 
 
 test("filterCodeFixesByFixName_allNamesPassedIn", () => {
     const opt = makeOptions(process.cwd(), {f : ['fixOverrideModifier','addConvertToUnknownForNonOverlappingTypes']});
     // all changes are picked
-    expect(filterCodeFixesByFixName(codefixes, opt)).toEqual(codefixes);
+    const result = filterCodeFixesByFixName(codefixes, opt);
+    expect(result[0]).toEqual(codefixes);
 })
 
 test("filterCodeFixesByFixName_singleStringPassedIn", () => {
     const opt = makeOptions(process.cwd(), {f : 'fixOverrideModifier'});
-    expect(filterCodeFixesByFixName(codefixes, opt)).toEqual(codefixes.slice(0,2));
+    const result = filterCodeFixesByFixName(codefixes, opt);
+    expect(result[0]).toEqual(codefixes.slice(0,2));
 })
 
 test("filterCodeFixesByFixName_singleStringListPassedIn", () => {
     const opt = makeOptions(process.cwd(), {f : ['addConvertToUnknownForNonOverlappingTypes']});
-    expect(filterCodeFixesByFixName(codefixes, opt)).toEqual(codefixes.slice(2,5));
+    const result = filterCodeFixesByFixName(codefixes, opt);
+    expect(result[0]).toEqual(codefixes.slice(2,5));
 })
 
 test("filterCodeFixesByFixName_noMatch", () => {
     const opt = makeOptions(process.cwd(), {f : ['add']});
-    expect(filterCodeFixesByFixName(codefixes, opt)).toEqual([]);
+    const result = filterCodeFixesByFixName(codefixes, opt);
+    expect(result[0]).toEqual([]);
 })
 
 test("filterCodeFixesByFixName_noMatchAndSomeMatch", () => {
     const opt = makeOptions(process.cwd(), {f : ['fixOverrideModifier', 'add']});
-    expect(filterCodeFixesByFixName(codefixes, opt)).toEqual(codefixes.slice(0,2));
+    const result = filterCodeFixesByFixName(codefixes, opt);
+    expect(result[0]).toEqual(codefixes.slice(0,2));
 })

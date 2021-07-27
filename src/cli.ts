@@ -39,14 +39,12 @@ const argv = yargs(process.argv.slice(2))
             type: "string"
             }).argv;
 
-// Later task : what if wanted to include flag for specific files only (also -f) or 
-
 export function makeOptions(cwd:string, argv:any) : Options { // Tested
     const {t, e, o, f, r} = argv;
     let tsconfigPath = (t===undefined) ? path.resolve(cwd, "tsconfig.json") : path.resolve(t);
     return  {
         tsconfigPath : tsconfigPath,
-        // default should be to replace
+        replace :  (r===true||r===undefined),
         outputFolder : (r===true||r===undefined) ? path.dirname(tsconfigPath) : (o===undefined) ? path.resolve(path.dirname(tsconfigPath), "../Output") : path.resolve(o),
         errorCode : (e===undefined) ? [] : (typeof e === "number") ? [e] : e,
         fixName : (f===undefined) ? [] :  (typeof f === "string") ? [f] : f,
@@ -63,10 +61,12 @@ const cliHost: Host = {
 // runCli('--tsconfig ./blah/whatever/tsconfig.json --fixNames 23423', testHost);
 // logs: [ ... ]
 // changedFiles: [ ... ]
-
-
-// codefixProject(makeOptions(process.cwd(), argv), cliHost);
-// print out how many errors matched/fixes matched
+const opt = makeOptions(process.cwd(), argv);
+console.log(opt.tsconfigPath);
+console.log(opt.outputFolder);
+codefixProject(opt, cliHost);
+//DONE: print out how many errors matched
+//fixes matched 
 
 // print out files changed
 

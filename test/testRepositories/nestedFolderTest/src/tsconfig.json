@@ -1,0 +1,7 @@
+{
+    "compilerOptions": {
+        "noImplicitOverride": true,
+        "noEmit": true,
+        "types": []
+    }
+}

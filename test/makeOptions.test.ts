@@ -6,7 +6,7 @@ import {makeOptions} from "../src/cli";
 
 
 //TODO: uhh the defult cwd may not nessssrily resolve to correct path on non windows
-
+// TODO: the way to resolve above is never use absolute paths in any test. :(
 test("option_empty_argv", () => {
     let argv = {};
     const cwd = path.resolve("C:\\TSuser\\src");

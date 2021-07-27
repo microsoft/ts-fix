@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import importCwd from "import-cwd";
 import type { LanguageService, LanguageServiceHost, ParseConfigFileHost, Program } from "typescript";
+import { parseInt } from "../../../../Users/t-isabelduan/TS-transform-project/node_modules/@types/lodash";
 
 function isTypeScriptVersionSupported(major: number, minor: number) {
   if (major < 3) return false;
@@ -80,4 +81,8 @@ export function createProject(options: CreateProjectOptions): Project | undefine
   if (!program) return undefined;
 
   return { ts, languageService, program };
+}
+
+function parseInt(_major: any, _arg1: number): number {
+    throw new Error("Function not implemented.");
 }

@@ -36,6 +36,7 @@ class TestHost implements Host {
 
 export interface Options {
   tsconfigPath: string;
+  replace: boolean;
   outputFolder: string;
   errorCode: number[];
   fixName: string[];
@@ -60,11 +61,12 @@ export async function codefixProject(opt:Options, host: Host) {
 }
 
 export async function applyCodefixesOverProject(opt: Options, host: Host): Promise<TextChange[]> {
-  // tsconfigPath: string, errorCode?: number|undefined
   // get project object
   const project = createProject({ tsConfigFilePath: opt.tsconfigPath });
   if (!project) {
-    // TODO: graceful error message reporting
+    // TODODone?: graceful error message reporting
+    host.log("Error: Could not create project.");
+    process.exit(1);
     throw new Error("Could not create project");
   }
 
@@ -79,7 +81,7 @@ export async function applyCodefixesOverProject(opt: Options, host: Host): Promi
   //    Otherwise, pull all fixes
 
   const [filteredDiagnostics, acceptedDiagnosticsOut] =  filterDiagnosticsByErrorCode(diagnosticsPerFile,opt);
-  acceptedDiagnosticsOut.forEach(string_describe => {
+  acceptedDiagnosticsOut.forEach((string_describe) => {
     host.log(string_describe);
   });
 
@@ -90,7 +92,13 @@ export async function applyCodefixesOverProject(opt: Options, host: Host): Promi
 
   // filter for codefixes if applicable, then 
   //    organize textChanges by what file they alter
-  const textChangesByFile = getTextChangeDict(codefixes, opt);
+  const [textChangesByFile, filterCodefixOut] = getTextChangeDict(codefixes, opt);
+
+  // some option if statement here?
+  filterCodefixOut.forEach((s: unknown) => {
+    host.log(s);
+  });
+
 
   // edit each file
   let leftoverChanges = doAllTextChanges(project, textChangesByFile, opt, host);
@@ -129,20 +137,24 @@ export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[]
         } 
         return false;
       });
-      filteredDiagnostics.push(filteredDiagnostic);
+      if (filteredDiagnostic.length > 0){
+        filteredDiagnostics.push(filteredDiagnostic);
+      }
     }
     let returnStrings = <string[]> [];
-    errorCounter.forEach((count, code) => {
-      returnStrings.push( "found " + count + " diagnostics with code " + code );
-    })
+    opt.errorCode.forEach((code) => {
+      const count = errorCounter.get(code);
+      if (count === undefined) {
+        returnStrings.push("no diagnostics found with code " + code)
+      } else {
+        returnStrings.push( "found " + count + " diagnostics with code " + code );
+      }
+    });
     
-    if (returnStrings.length === 0) {
-      return [[], ["no diagnostics found with codes " + opt.errorCode.toString()]];
-    }
     return [filteredDiagnostics, returnStrings];
   }
   // otherwise, use all errors
-  return [diagnostics, ["found " + _.reduce(diagnostics.map((d) => d.length), function(sum, n) {
+  return [diagnostics, ["found " + _.reduce(diagnostics.map((d: { length: any; }) => d.length), function(sum, n) {
       return sum + n;}, 0) + " diagnostics in " + diagnostics.length + " files"]];
 }
 
@@ -170,10 +182,11 @@ function getFileTextChangesFromCodeFix(codefix: CodeFixAction): readonly FileTex
   return codefix.changes;
 }
 
-export function getTextChangeDict(codefixes: readonly CodeFixAction[], opt: Options): Map<string, TextChange[]> {
+export function getTextChangeDict(codefixes: readonly CodeFixAction[], opt: Options): [Map<string, TextChange[]>, string[]] {
   let textChangeDict = new Map<string, TextChange[]>();
 
-  const filteredFixes = filterCodeFixesByFixName(codefixes, opt);
+  const [filteredFixes, out] = filterCodeFixesByFixName(codefixes, opt);
+  
   for (let i = 0; i < filteredFixes.length; i++) {
     const fix = filteredFixes[i];
     const changes = getFileTextChangesFromCodeFix(fix);
@@ -191,17 +204,42 @@ export function getTextChangeDict(codefixes: readonly CodeFixAction[], opt: Opti
     }
   }
 
-  return textChangeDict;
+  return [textChangeDict, out];
 }
 
-export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], opt: Options): readonly CodeFixAction[] { //tested
+export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], opt: Options): [readonly CodeFixAction[], string[]] { //tested partially (need to test output)
   if (opt.fixName.length === 0) {
     // empty argument behavior... currently, we just keep all fixes if none are specified
-    return codefixes;
+    return [codefixes, ["found " + codefixes.length + " codefixes"]];
   }
   // cannot sort by fixId right now since fixId is a {}
   // do we want to distinguish the case when no codefixes are picked? (no hits)
-  return codefixes.filter(function (codefix) {return  opt.fixName.includes(codefix.fixName);});
+
+  let fixCounter = new Map<string, number>();
+  let out = <string[]>[];
+  const filteredFixes = codefixes.filter(function (fix: { fixName: any; }) {
+    if ( opt.fixName.includes(fix.fixName)) {
+      const currentVal = fixCounter.get(fix.fixName);
+      if (currentVal !== undefined) {
+        fixCounter.set(fix.fixName, currentVal + 1);
+      } else {
+        fixCounter.set(fix.fixName, 1);
+      }
+      return true;
+    }
+    return false;
+   });
+
+  opt.fixName.forEach((name: string) => {
+    const count = fixCounter.get(name);
+    if (count === undefined) {
+      out.push("no codefixes found with name " + name)
+    } else {
+      out.push( "found " + count + " codefixes with name " + name);
+    }
+  });
+  
+  return [filteredFixes, out];
 }
 
 function getFileNameAndTextChangesFromCodeFix(ftchanges: FileTextChanges): [string, TextChange[]] {
@@ -250,7 +288,7 @@ export function sortChangesByStart(textChanges: TextChange[]) : TextChange[] { /
   // what if two changes start at the same place but have differnt lengths?
       // currently the shorter one is put first 
       // ignores text content of the changes
-  return textChanges.sort((a, b) => {
+  return textChanges.sort((a: { span: { start: number; length: number; }; }, b: { span: { start: number; length: number; }; }) => {
     return (a.span.start - b.span.start === 0) ? a.span.length - b.span.length : a.span.start - b.span.start 
 });
 }
@@ -306,32 +344,38 @@ function writeToFile(fileName: string, fileContents: string, opt: Options, host:
     createDirectory(writeToDirectory);
   }
   host.writeFile(writeToFileName , fileContents);
-  host.log("Updated " + writeToFileName); //TODo: the print statment >:
+  host.log("Updated " + writeToFileName); 
 }
 
 function createDirectory(directoryPath: string) {
   fs.mkdir(directoryPath, {recursive :true}, () => {});
 }
 
-// TODO: !!! aah ok so i dont know if i need these down here anymore... restructuring needed?
+
+
+export function getFileName(filePath: string): string {
+  return path.basename(filePath);
+}
+
+export function getDirectory(filePath:string) :string {
+  return path.dirname(filePath);
+}
+
+export function getRelativePath(filePath: string, opt: Options): string{ 
+  // this doesn't work when tsconfig or filepath is not passed in as absolute...
+  // as a result getOutputFilePath does not work for the non-replace option 
+  return path.relative(getDirectory(opt.tsconfigPath), path.resolve(filePath));
+}
 
 function getOutputFilePath(filePath: string, opt: Options): string {
+  // this function uses absolute paths
+  if (opt.replace === true){
+    return filePath;
+  }
   const fileName = getRelativePath(filePath, opt);
   return path.resolve(opt.outputFolder, fileName);
 }
 
-export function getFileName(filePath: string): string {
-  return filePath.replace(/^.*[\\\/]/, '');
-}
-
-export function getDirectory(filePath:string) :string {
-  return filePath.substring(filePath.length - getFileName(filePath).length)
-}
-
-function getOutputBaseFolder(opt: Options):string {
-  return opt.outputFolder;
-}
-
-export function getRelativePath(filePath: string, opt: Options): string{ 
-  return path.relative(getDirectory(opt.tsconfigPath), filePath);
+function project(project: any, d: {}, opt: any) {
+    throw new Error("Function not implemented.");
 }

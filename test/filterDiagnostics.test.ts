@@ -3,14 +3,20 @@ import { CodeFixAction, Diagnostic, SourceFile } from "typescript";
 import {makeOptions} from "../src/cli";
 
 const default_opt = makeOptions(process.cwd(), {});
-function makeDiagnostic(code:number, file?: SourceFile):Diagnostic {
+
+interface TestDiagnostic extends Diagnostic {
+    fileName? : string;
+}
+
+function makeDiagnostic(code:number, fileName?: string):TestDiagnostic {
     return {
         category: 1,
         code: code,
-        file: file,
+        file: undefined,
         start: undefined,
         length: undefined,
-        messageText: undefined
+        messageText: undefined,
+        fileName: fileName
     }
 }
 
@@ -71,6 +77,48 @@ test("filterDiagnostics_oneErrorInOptNotFoundInOneFile", () => {
 
     const results = filterDiagnosticsByErrorCode(originalDiagnostics, opt_error111);
     expect(results[0]).toEqual([]);
-    expect(results[1]).toEqual(["no diagnostics found with codes 111"]);
+    expect(results[1]).toEqual(["no diagnostics found with code 111"]);
+})
+
+test("filterDiagnostics_manyErrorInOptNotFoundInOneFile", () => {
+    const opt_error111 = makeOptions(process.cwd(), {e:[111,999]});
+    const originalDiagnostics = [[makeDiagnostic(222), makeDiagnostic(222), makeDiagnostic(333)]];
+
+    const results = filterDiagnosticsByErrorCode(originalDiagnostics, opt_error111);
+    expect(results[0]).toEqual([]);
+    expect(results[1]).toEqual(["no diagnostics found with code 111", "no diagnostics found with code 999"]);
+})
+
+
+
+test("filterDiagnostics_oneErrorInOptNotFoundInManyFiles", () => {
+    const opt_error111 = makeOptions(process.cwd(), {e:111});
+    const originalDiagnostics = [[makeDiagnostic(222), makeDiagnostic(222), makeDiagnostic(333)],
+                                    [makeDiagnostic(444), makeDiagnostic(444), makeDiagnostic(777)],
+                                    [makeDiagnostic(777), makeDiagnostic(222), makeDiagnostic(777)],
+                                    [makeDiagnostic(333), makeDiagnostic(222)]];
+    const results = filterDiagnosticsByErrorCode(originalDiagnostics, opt_error111);
+    expect(results[0]).toEqual([]);
+    expect(results[1]).toEqual(["no diagnostics found with code 111"]);
+})
+
+
+test("filterDiagnostics_oneErrorInOptSomeFoundInManyFiles", () => {
+    const opt_error111 = makeOptions(process.cwd(), {e:111});
+    const originalDiagnostics = [[makeDiagnostic(222, "f1"), makeDiagnostic(111, "f1"), makeDiagnostic(333, "f1")],
+                                    [makeDiagnostic(444, "f2"), makeDiagnostic(444, "f2"), makeDiagnostic(777, "f2")],
+                                    [makeDiagnostic(777, "f3"), makeDiagnostic(222, "f3"), makeDiagnostic(777, "f3")],
+                                    [makeDiagnostic(333, "f4"), makeDiagnostic(222, "f4")], 
+                                    [makeDiagnostic(111, "f5"), makeDiagnostic(222, "f5"), makeDiagnostic(333, "f5")],
+                                    [makeDiagnostic(222, "f6"), makeDiagnostic(111, "f6"), makeDiagnostic(111, "f6")],
+                                    [makeDiagnostic(444, "f7"), makeDiagnostic(444, "f7")],
+                                    [makeDiagnostic(111, "f8")]
+                                ];
+    const results = filterDiagnosticsByErrorCode(originalDiagnostics, opt_error111);
+    expect(results[0]).toEqual([[makeDiagnostic(111, "f1")], 
+                                [makeDiagnostic(111, "f5")], 
+                                [makeDiagnostic(111, "f6"), makeDiagnostic(111, "f6")],
+                                [makeDiagnostic(111, "f8")]]);
+    expect(results[1]).toEqual(["found 5 diagnostics with code 111"]);
 })
 
