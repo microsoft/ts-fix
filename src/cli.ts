@@ -6,61 +6,71 @@ import path from "path";
 import { Options, codefixProject, Host } from '.';
 import { silent } from 'import-cwd';
 
-const argv = yargs(process.argv.slice(2))
+export function parseArgs(cwd: string, args: string[]): Options {
+    const {
+        tsconfig,
+        outputFolder,
+        errorCode,
+        fixName,
+        verbose,
+        write,
+    } = yargs(args)
             .scriptName("codefix")
             .usage("$0 -t tsconfig.json -o /output -e err#")
-            .option("t", {
-                alias: "tsconfig",
+            .option("tsconfig", {
+                alias: "t",
                 description: "name or path to project's tsconfig",
                 type: "string",
-                nargs: 1
+                nargs: 1,
+                default: "./tsconfig.json",
+                coerce: (arg: string) => {
+                    return path.resolve(cwd, arg);
+                }
             })
             // .option("file", {
             //     description: "files to codefix. Not implemented yet.",
             //     type: "string"
             // })
-            .option("e", {
-                alias: "errorCode",
+            .option("errorCode", {
+                alias: "e",
                 describe: "the error code (number)",
-                type: "number"
+                type: "number",
+                array: true,
+                default: [],
             })
-            .option("f", {
-                alias: "fixName",
+            .option("fixName", {
+                alias: "f",
                 describe: "names of codefixes to apply",
-                type: "string"
+                type: "string",
+                array: true, 
+                default: []
             }) 
-            .option("r", {
-               alias: "replace",
-               describe: "Default: True. Set flag to false if code-fixed code should be emitted into original file (overwrites original file)",
-               type: "boolean"
-           })
-           .option("w", {
-               alias: "write", 
+           .option("write", {
+               alias: "w", 
                describe: "Default: False. Will only emit or overwrite files if --write is set to True.",
-               type:"boolean"
+               type:"boolean", 
+               default: false,
            })
-           .option("o", {
-                alias: "outputDirectory", 
-                describe: "the output directory. Only used if -r is explicitly false (--no-r)",
+           .option("outputFolder", {
+                alias: "o", 
+                describe: "the output directory",
                 type: "string"
             })
             .option("verbose", {
                 describe: "Default: True. Writes status to console during runtime",
-                type: "boolean"
+                type: "boolean",
+                default: true,
             })
             .argv;
-
-export function makeOptions(cwd:string, argv:any) : Options { // Tested
-    const {t, e, o, f, r, w} = argv;
-    let tsconfigPath = (t===undefined) ? path.resolve(cwd, "tsconfig.json") : path.resolve(t);
-    return  {
-        tsconfigPath : tsconfigPath,
-        replace :  (r===true||r===undefined),
-        outputFolder : (r===true||r===undefined) ? path.dirname(tsconfigPath) : (o===undefined) ? path.resolve(path.dirname(tsconfigPath), "../Output") : path.resolve(o),
-        errorCode : (e===undefined) ? [] : (typeof e === "number") ? [e] : e,
-        fixName : (f===undefined) ? [] :  (typeof f === "string") ? [f] : f,
-        write : w===true
-    }
+    
+    return {
+        tsconfig,
+        errorCode,
+        fixName,
+        write,
+        verbose,
+        outputFolder: outputFolder || path.dirname(tsconfig)
+    };
 }
 
 const cliHost: Host = {
@@ -77,14 +87,15 @@ const silentHost: Host = {
     exists: existsSync
 }
 
-
-
 // runCli('--tsconfig ./blah/whatever/tsconfig.json --fixNames 23423', testHost);
 // logs: [ ... ]
 // changedFiles: [ ... ]
-if (argv.t !== undefined) {
-    const opt = makeOptions(process.cwd(), argv);
-    if (argv.verbose === true || argv.verbose === undefined){
+if (!module.parent) {
+    const opt = parseArgs(process.cwd(), process.argv.slice(2));
+
+    console.log(opt);
+    
+    if (opt.verbose === true){
         codefixProject(opt, cliHost);
     }
     else {
@@ -93,9 +104,8 @@ if (argv.t !== undefined) {
 }
 
 //DONE: print out how many errors matched
-//fixes matched 
-
-// print out files changed
+//DONE: fixes matched 
+//DONE: print out files changed
 
 // overlapping errors (matched changes that were not applied)
 

@@ -1,8 +1,6 @@
 import { getOutputFilePath } from "../src/index";
 import { makeOptions } from "../src/cli";
 import path from "path";
-import { createDo } from "typescript";
-
 
 test("outputFileName_replace", () => {
     let argv = {};

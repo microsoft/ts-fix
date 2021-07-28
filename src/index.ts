@@ -4,6 +4,7 @@ import os from "os";
 import _ from "lodash";
 import { createProject, Project } from "./ts";
 import { string } from "yargs";
+import { PathLike } from "fs";
 
 export interface Logger {
   (...args: any[]): void;
@@ -20,32 +21,50 @@ export interface Host {
   exists: typeof import("fs").existsSync;
 }
 
-// class TestHost implements Host {
-//     private filesWritten = new Map<string, string>();
-//     private logged = <string[]>[];
-//     log(s:string) {this.logged.push(s)};
-//     writeFile(fileName: string, content: string) {
-//         this.filesWritten.set(fileName, content);
-//     }
+export class TestHost implements Host {
+    private filesWritten = new Map<string, string>();
+    private logged = <string[]>[];
+    private existsChecked = <(string|PathLike)[]>[];
+    private newDir = <(string|PathLike)[]>[];
+    
+    log(s:string) {this.logged.push(s)};
+    
+    writeFile(fileName: string, content: string) {
+        this.filesWritten.set(fileName, content);
+    }
 
-//     getChangedFile(fileName: string) {
-//         return this.filesWritten.get(fileName);
-//     }
-// }
+    exists(fileName:PathLike) {
+      this.existsChecked.push(fileName);
+      return true;
+    }
+
+    mkdir(fileName:PathLike) {
+      this.newDir.push(fileName);
+      return undefined;
+    }
+
+    getChangedFile(fileName: string) {
+        return this.filesWritten.get(fileName);
+    }
+    
+    getlogged() {
+      return this.logged.length;
+    }
+}
 
 
 export interface Options {
-  tsconfigPath: string;
-  replace: boolean;
+  tsconfig: string;
   outputFolder: string;
   errorCode: number[];
   fixName: string[];
-  write: boolean
+  write: boolean,
+  verbose: boolean
 }
 
 export async function codefixProject(opt:Options, host: Host) {
 
-  const project = createProject({ tsConfigFilePath: opt.tsconfigPath });
+  const project = createProject({ tsConfigFilePath: opt.tsconfig });
   if (!project) {
     host.log("Error: Could not create project.");
     process.exit(1);
@@ -61,7 +80,7 @@ export async function codefixProject(opt:Options, host: Host) {
     if (leftoverChanges.length > 0) {
       // maybe in getCodeFixesFromProject we have an exit if no changes?
       host.log("Performing second passthrough")
-      const project2 = createProject({ tsConfigFilePath: opt.tsconfigPath });
+      const project2 = createProject({ tsConfigFilePath: opt.tsconfig });
       if (!project2) {
         host.log("Error: Could not create project.");
         process.exit(1);
@@ -125,6 +144,7 @@ export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[]
 
     let errorCounter = new Map<number, number>();
     let filteredDiagnostics = <(readonly Diagnostic[])[]>[];
+
     for (let i = 0; i < diagnostics.length; i++) {
       //for every diagnostic list
 
@@ -361,14 +381,12 @@ export function getDirectory(filePath:string) :string {
 export function getRelativePath(filePath: string, opt: Options): string{ 
   // this doesn't work when tsconfig or filepath is not passed in as absolute...
   // as a result getOutputFilePath does not work for the non-replace option 
-  return path.relative(getDirectory(opt.tsconfigPath), path.resolve(filePath));
+  return path.relative(getDirectory(opt.tsconfig), path.resolve(filePath));
 }
 
 export function getOutputFilePath(filePath: string, opt: Options): string {
   // this function uses absolute paths
-  if (opt.replace === true){
-    return filePath;
-  }
+
   const fileName = getRelativePath(filePath, opt);
   return path.resolve(opt.outputFolder, fileName);
 }
