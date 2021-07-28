@@ -1,9 +1,6 @@
 import path from "path";
 import {makeOptions} from "../src/cli";
 
-// const path_to_nested = path.resolve("C:\\Users\\t-isabelduan\\TS-transform-project\\test\\testRepositories\\nestedFolderTest\\src\\tsconfig.json");
-// const relative_to_nested = path.resolve("test\\testRepositories\\nestedFolderTest\\src\\tsconfig.json");
-
 
 //TODO: uhh the defult cwd may not nessssrily resolve to correct path on non windows
 // TODO: the way to resolve above is never use absolute paths in any test. :(

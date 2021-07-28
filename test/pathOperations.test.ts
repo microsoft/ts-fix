@@ -1,8 +1,6 @@
 import { getDirectory,getFileName,getRelativePath } from "../src/index";
 import { makeOptions } from "../src/cli";
 import path from "path";
-import { TextChange } from "typescript";
-import { exitProcess } from "yargs";
 
 const cwd = process.cwd();
 
