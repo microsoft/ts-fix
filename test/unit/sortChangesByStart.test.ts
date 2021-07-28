@@ -1,8 +1,5 @@
-import { Options, filterCodeFixesByFixName, sortChangesByStart } from "../../src/index";
-import path from "path";
-import { CodeFixAction, TextChange } from "typescript";
-import {makeOptions} from "../../src/cli";
-import { create, drop } from "lodash";
+import { sortChangesByStart } from "../../src/index";
+import { TextChange } from "typescript";
 
 
 const textchanges : TextChange[] = [

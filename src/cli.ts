@@ -6,7 +6,7 @@ import path from "path";
 import { Options, codefixProject, Host } from '.';
 import { silent } from 'import-cwd';
 
-export function parseArgs(cwd: string, args: string[]): Options {
+export function makeOptions(cwd: string, args: string[]): Options {
     const {
         tsconfig,
         outputFolder,
@@ -69,7 +69,7 @@ export function parseArgs(cwd: string, args: string[]): Options {
         fixName,
         write,
         verbose,
-        outputFolder: outputFolder || path.dirname(tsconfig)
+        outputFolder: outputFolder ? path.resolve(cwd, outputFolder) : path.dirname(tsconfig)
     };
 }
 
@@ -91,7 +91,7 @@ const silentHost: Host = {
 // logs: [ ... ]
 // changedFiles: [ ... ]
 if (!module.parent) {
-    const opt = parseArgs(process.cwd(), process.argv.slice(2));
+    const opt = makeOptions(process.cwd(), process.argv.slice(2));
 
     console.log(opt);
     

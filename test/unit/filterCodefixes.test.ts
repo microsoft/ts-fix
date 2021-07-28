@@ -31,7 +31,7 @@ const codefixes : CodeFixAction[] = [
 ]
 
 test("filterCodeFixesByFixName_noNamesPassedIn", () => {
-    const opt = makeOptions(process.cwd(), {});
+    const opt = [];
     // empty argument behavior... currently, we just keep all fixes if none are specified
     const result = filterCodeFixesByFixName(codefixes, opt);
     expect(result[0]).toEqual(codefixes);
@@ -39,32 +39,26 @@ test("filterCodeFixesByFixName_noNamesPassedIn", () => {
 
 
 test("filterCodeFixesByFixName_allNamesPassedIn", () => {
-    const opt = makeOptions(process.cwd(), {f : ['fixOverrideModifier','addConvertToUnknownForNonOverlappingTypes']});
-    // all changes are picked
-    const result = filterCodeFixesByFixName(codefixes, opt);
+    const result = filterCodeFixesByFixName(codefixes, ['fixOverrideModifier','addConvertToUnknownForNonOverlappingTypes']);
     expect(result[0]).toEqual(codefixes);
 })
 
 test("filterCodeFixesByFixName_singleStringPassedIn", () => {
-    const opt = makeOptions(process.cwd(), {f : 'fixOverrideModifier'});
-    const result = filterCodeFixesByFixName(codefixes, opt);
+    const result = filterCodeFixesByFixName(codefixes, ['fixOverrideModifier']);
     expect(result[0]).toEqual(codefixes.slice(0,2));
 })
 
 test("filterCodeFixesByFixName_singleStringListPassedIn", () => {
-    const opt = makeOptions(process.cwd(), {f : ['addConvertToUnknownForNonOverlappingTypes']});
-    const result = filterCodeFixesByFixName(codefixes, opt);
+    const result = filterCodeFixesByFixName(codefixes, ['addConvertToUnknownForNonOverlappingTypes']);
     expect(result[0]).toEqual(codefixes.slice(2,5));
 })
 
 test("filterCodeFixesByFixName_noMatch", () => {
-    const opt = makeOptions(process.cwd(), {f : ['add']});
-    const result = filterCodeFixesByFixName(codefixes, opt);
+    const result = filterCodeFixesByFixName(codefixes, ['add']);
     expect(result[0]).toEqual([]);
 })
 
 test("filterCodeFixesByFixName_noMatchAndSomeMatch", () => {
-    const opt = makeOptions(process.cwd(), {f : ['fixOverrideModifier', 'add']});
-    const result = filterCodeFixesByFixName(codefixes, opt);
+    const result = filterCodeFixesByFixName(codefixes, ['fixOverrideModifier', 'add']);
     expect(result[0]).toEqual(codefixes.slice(0,2));
 })

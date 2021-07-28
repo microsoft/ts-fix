@@ -107,7 +107,7 @@ export async function getCodeFixesFromProject(project: Project, opt: Options, ho
   // pull codefixes from diagnostics.  If errorCode is specified, only pull fixes for that/those errors. 
   //    Otherwise, pull all fixes
 
-  const [filteredDiagnostics, acceptedDiagnosticsOut] =  filterDiagnosticsByErrorCode(diagnosticsPerFile,opt);
+  const [filteredDiagnostics, acceptedDiagnosticsOut] =  filterDiagnosticsByErrorCode(diagnosticsPerFile,opt.errorCode);
   acceptedDiagnosticsOut.forEach((string_describe: unknown) => {
     host.log(string_describe);
   });
@@ -137,10 +137,10 @@ export function getDiagnostics(project: Project): (readonly Diagnostic[])[] {
 }
 
 
-export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[])[], opt:Options): [(readonly Diagnostic[])[], string[]]{
+export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[])[], errorCodes: number[]): [(readonly Diagnostic[])[], string[]]{
   // if errorCodes were passed in, only use the specified errors
   // diagnostics is guarenteed to not be [] or [[]]
-  if (opt.errorCode.length !== 0) {
+  if (errorCodes.length !== 0) {
 
     let errorCounter = new Map<number, number>();
     let filteredDiagnostics = <(readonly Diagnostic[])[]>[];
@@ -150,7 +150,7 @@ export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[]
 
       // get rid of not matched errors 
       const filteredDiagnostic =  _.filter(diagnostics[i], function (d) {
-        if (opt.errorCode.includes(d.code)) {
+        if (errorCodes.includes(d.code)) {
           const currentVal =  errorCounter.get(d.code) ;
           if (currentVal!== undefined) {
             errorCounter.set(d.code, currentVal +1); 
@@ -166,7 +166,7 @@ export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[]
       }
     }
     let returnStrings = <string[]> [];
-    opt.errorCode.forEach((code: number) => {
+    errorCodes.forEach((code: number) => {
       const count = errorCounter.get(code);
       if (count === undefined) {
         returnStrings.push("no diagnostics found with code " + code)
@@ -208,7 +208,7 @@ function getFileTextChangesFromCodeFix(codefix: CodeFixAction): readonly FileTex
 export function getTextChangeDict(codefixes: readonly CodeFixAction[], opt: Options): [Map<string, TextChange[]>, string[]] {
   let textChangeDict = new Map<string, TextChange[]>();
 
-  const [filteredFixes, out] = filterCodeFixesByFixName(codefixes, opt);
+  const [filteredFixes, out] = filterCodeFixesByFixName(codefixes, opt.fixName);
   
   for (let i = 0; i < filteredFixes.length; i++) {
     const fix = filteredFixes[i];
@@ -230,8 +230,8 @@ export function getTextChangeDict(codefixes: readonly CodeFixAction[], opt: Opti
   return [textChangeDict, out];
 }
 
-export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], opt: Options): [readonly CodeFixAction[], string[]] { //tested partially (need to test output)
-  if (opt.fixName.length === 0) {
+export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], fixNames: string[]): [readonly CodeFixAction[], string[]] { //tested partially (need to test output)
+  if (fixNames.length === 0) {
     // empty argument behavior... currently, we just keep all fixes if none are specified
     return [codefixes, ["found " + codefixes.length + " codefixes"]];
   }
@@ -241,7 +241,7 @@ export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], op
   let fixCounter = new Map<string, number>();
   let out = <string[]>[];
   const filteredFixes = codefixes.filter(function (fix: { fixName: any; }) {
-    if ( opt.fixName.includes(fix.fixName)) {
+    if (fixNames.includes(fix.fixName)) {
       const currentVal = fixCounter.get(fix.fixName);
       if (currentVal !== undefined) {
         fixCounter.set(fix.fixName, currentVal + 1);
@@ -253,7 +253,7 @@ export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], op
     return false;
    });
 
-  opt.fixName.forEach((name: string) => {
+  fixNames.forEach((name: string) => {
     const count = fixCounter.get(name);
     if (count === undefined) {
       out.push("no codefixes found with name " + name)

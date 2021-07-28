@@ -1,18 +1,10 @@
-import { getDirectory,getFileName,getRelativePath } from "../../src/index";
+import { getDirectory,getFileName } from "../../src/index";
 import { makeOptions } from "../../src/cli";
 import path from "path";
 
 const cwd = process.cwd();
 
-const opt_default = makeOptions(cwd, {});
-
-const nested_argv  = { 
-    t: path.resolve(cwd, "test"),
-    r:false,
-    o: path.resolve(cwd, "output")
-};
-
-const opt_output = makeOptions(cwd, nested_argv);
+const opt_default = makeOptions(cwd, []);
 
 const fileList = ["file1.ts", (path.normalize("/src/file2.ts"))];
 
