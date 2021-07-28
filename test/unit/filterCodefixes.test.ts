@@ -1,6 +1,6 @@
-import { Options, filterCodeFixesByFixName } from "../src/index";
+import { Options, filterCodeFixesByFixName } from "../../src/index";
 import { CodeFixAction, TextChange } from "typescript";
-import {makeOptions} from "../src/cli";
+import {makeOptions} from "../../src/cli";
 
 const codefixes : CodeFixAction[] = [ 
     {fixName: 'fixOverrideModifier', 

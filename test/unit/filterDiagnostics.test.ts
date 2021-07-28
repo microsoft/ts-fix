@@ -1,6 +1,6 @@
-import { Options, filterDiagnosticsByErrorCode } from "../src/index";
+import { Options, filterDiagnosticsByErrorCode } from "../../src/index";
 import { CodeFixAction, Diagnostic, SourceFile } from "typescript";
-import {makeOptions} from "../src/cli";
+import {makeOptions} from "../../src/cli";
 
 const default_opt = makeOptions(process.cwd(), {});
 

@@ -1,4 +1,4 @@
-import { doTextChangeOnString } from "../src/index";
+import { doTextChangeOnString } from "../../src/index";
 // import path from "path";
 import { TextChange } from "typescript";
 

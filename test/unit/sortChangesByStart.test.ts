@@ -1,7 +1,7 @@
-import { Options, filterCodeFixesByFixName, sortChangesByStart } from "../src/index";
+import { Options, filterCodeFixesByFixName, sortChangesByStart } from "../../src/index";
 import path from "path";
 import { CodeFixAction, TextChange } from "typescript";
-import {makeOptions} from "../src/cli";
+import {makeOptions} from "../../src/cli";
 import { create, drop } from "lodash";
 
 

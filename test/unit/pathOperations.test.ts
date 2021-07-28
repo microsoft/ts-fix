@@ -1,5 +1,5 @@
-import { getDirectory,getFileName,getRelativePath } from "../src/index";
-import { makeOptions } from "../src/cli";
+import { getDirectory,getFileName,getRelativePath } from "../../src/index";
+import { makeOptions } from "../../src/cli";
 import path from "path";
 
 const cwd = process.cwd();
