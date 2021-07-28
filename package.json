@@ -17,7 +17,7 @@
     "test": "jest",
     "prepare": "tsc -p ."
   },
-  "name": "ts-transform-project",
+  "name": "ts-fix",
   "author": "Isabel Duan",
   "devDependencies": {
     "@types/jest": "^26.0.24",
