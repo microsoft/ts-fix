@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import importCwd from "import-cwd";
 import type { LanguageService, LanguageServiceHost, ParseConfigFileHost, Program } from "typescript";
-import { parseInt } from "../../../../Users/t-isabelduan/TS-transform-project/node_modules/@types/lodash";
 
 function isTypeScriptVersionSupported(major: number, minor: number) {
   if (major < 3) return false;

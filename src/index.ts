@@ -1,11 +1,9 @@
 import path from "path";
 import type { CodeFixAction, Diagnostic, FileTextChanges, getDefaultFormatCodeSettings, TextChange } from "typescript";
-import os, { hostname } from "os";
-import fs from "fs";
+import os from "os";
 import _ from "lodash";
 import { createProject, Project } from "./ts";
-// export const tsConfigFilePathDefault = path.resolve(__dirname, "../test/exampleTest/tsconfig.json");
-// const outputFolderDefault = path.resolve(__dirname, "../test/exampleTestOutput");
+import { string } from "yargs";
 
 export interface Logger {
   (...args: any[]): void;
@@ -18,20 +16,22 @@ export interface Logger {
 export interface Host {
   writeFile(fileName: string, content: string): void;
   log: Logger;
+  mkdir: typeof import("fs").mkdirSync;
+  exists: typeof import("fs").existsSync;
 }
 
-class TestHost implements Host {
-    private filesWritten = new Map<string, string>();
-    private logged = <string[]>[];
-    log(s:string) {this.logged.push(s)};
-    writeFile(fileName: string, content: string) {
-        this.filesWritten.set(fileName, content);
-    }
+// class TestHost implements Host {
+//     private filesWritten = new Map<string, string>();
+//     private logged = <string[]>[];
+//     log(s:string) {this.logged.push(s)};
+//     writeFile(fileName: string, content: string) {
+//         this.filesWritten.set(fileName, content);
+//     }
 
-    getChangedFile(fileName: string) {
-        return this.filesWritten.get(fileName);
-    }
-}
+//     getChangedFile(fileName: string) {
+//         return this.filesWritten.get(fileName);
+//     }
+// }
 
 
 export interface Options {
@@ -40,53 +40,61 @@ export interface Options {
   outputFolder: string;
   errorCode: number[];
   fixName: string[];
+  write: boolean
 }
 
 export async function codefixProject(opt:Options, host: Host) {
-  const firstPassLeftover = await applyCodefixesOverProject(opt, host);
 
-  // if overlap/non executed changes for some reason, redo process 
-  if (firstPassLeftover.length > 0) {
-    // maybe in applycodefixesoverproject we have an exit if no changes?
-    // maybe emit some sort of diagnostic/statement? 
-    // might need some other type/flag with more options besides boolean 
-    return applyCodefixesOverProject(opt, host);
-  }
-  host;
-
-  // host.log("blah blah blah");
-  // host.log.verbose("asdfasdfasdf");
-
-  return firstPassLeftover;
-}
-
-export async function applyCodefixesOverProject(opt: Options, host: Host): Promise<TextChange[]> {
-  // get project object
   const project = createProject({ tsConfigFilePath: opt.tsconfigPath });
   if (!project) {
-    // TODODone?: graceful error message reporting
     host.log("Error: Could not create project.");
     process.exit(1);
-    throw new Error("Could not create project");
   }
+  host.log("typescript version "  + project.ts.version)
+  const textChangesByFile = await getCodeFixesFromProject(project, opt, host);
+  
+  // edit each file if --write is true
+  if (opt.write) {
+    let leftoverChanges = doAllTextChanges(project, textChangesByFile, opt, host);
+
+    // if overlap/non executed changes for any reason, redo process 
+    if (leftoverChanges.length > 0) {
+      // maybe in getCodeFixesFromProject we have an exit if no changes?
+      host.log("Performing second passthrough")
+      const project2 = createProject({ tsConfigFilePath: opt.tsconfigPath });
+      if (!project2) {
+        host.log("Error: Could not create project.");
+        process.exit(1);
+      }
+      const textChangesByFile2 = await getCodeFixesFromProject(project2, opt, host);
+      return doAllTextChanges(project2, textChangesByFile2, opt, host);
+    }
+    return leftoverChanges;
+  }
+
+  // otherwise, done
+  return [];
+}
+
+export async function getCodeFixesFromProject(project: Project, opt: Options, host: Host): Promise<Map<string,TextChange[]>> { 
 
   // pull all codefixes.
   const diagnosticsPerFile = await getDiagnostics(project);
 
   if (diagnosticsPerFile === [] || diagnosticsPerFile === [[]]){
     host.log("No more diagnostics.");
-    return [];
+    return new Map<string, TextChange[]>();
   }
   // pull codefixes from diagnostics.  If errorCode is specified, only pull fixes for that/those errors. 
   //    Otherwise, pull all fixes
 
   const [filteredDiagnostics, acceptedDiagnosticsOut] =  filterDiagnosticsByErrorCode(diagnosticsPerFile,opt);
-  acceptedDiagnosticsOut.forEach((string_describe) => {
+  acceptedDiagnosticsOut.forEach((string_describe: unknown) => {
     host.log(string_describe);
   });
 
-  const codefixesPerFile = filteredDiagnostics.map(function (d) {
-    return (getCodeFixesForFile(project, d, opt)); 
+  const codefixesPerFile = filteredDiagnostics.map(function (d: readonly Diagnostic[]) {
+    return (getCodeFixesForFile(project, d)); 
   });
   const codefixes = <CodeFixAction[]>_.flatten(codefixesPerFile);
 
@@ -99,11 +107,7 @@ export async function applyCodefixesOverProject(opt: Options, host: Host): Promi
     host.log(s);
   });
 
-
-  // edit each file
-  let leftoverChanges = doAllTextChanges(project, textChangesByFile, opt, host);
-  // figure out returns alater....
-  return leftoverChanges;
+  return textChangesByFile;
 }
 
 export function getDiagnostics(project: Project): (readonly Diagnostic[])[] {
@@ -142,7 +146,7 @@ export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[]
       }
     }
     let returnStrings = <string[]> [];
-    opt.errorCode.forEach((code) => {
+    opt.errorCode.forEach((code: number) => {
       const count = errorCounter.get(code);
       if (count === undefined) {
         returnStrings.push("no diagnostics found with code " + code)
@@ -158,10 +162,10 @@ export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[]
       return sum + n;}, 0) + " diagnostics in " + diagnostics.length + " files"]];
 }
 
-export function getCodeFixesForFile(project: Project, diagnostics: readonly Diagnostic[], opt: Options): readonly CodeFixAction[] {
+export function getCodeFixesForFile(project: Project, diagnostics: readonly Diagnostic[]): readonly CodeFixAction[] {
   // expects already filtered diagnostics
   const service = project.languageService;
-  const codefixes = (<CodeFixAction[]>[]).concat.apply([], diagnostics.map(function (d) {
+  const codefixes = (<CodeFixAction[]>[]).concat.apply([], diagnostics.map(function (d: Diagnostic) {
     if (d.file && d.start !== undefined && d.length !== undefined) {
       return service.getCodeFixesAtPosition(
         d.file.fileName,
@@ -173,8 +177,7 @@ export function getCodeFixesForFile(project: Project, diagnostics: readonly Diag
     } else {
       return [];
     }
-  })).filter(d => d !== undefined);
-  opt
+  })).filter((d:CodeFixAction) => d !== undefined);
   return codefixes;
 }
 
@@ -248,7 +251,7 @@ function getFileNameAndTextChangesFromCodeFix(ftchanges: FileTextChanges): [stri
 
 function doAllTextChanges(project: Project, textChanges: Map<string, TextChange[]>, opt: Options, host: Host): TextChange[] {
   let notAppliedChanges =<TextChange[]>[];
-  textChanges.forEach((fileFixes, fileName) => {
+  textChanges.forEach((fileFixes: TextChange[], fileName: string) => {
     const sourceFile = project.program.getSourceFile(fileName);
 
     if (sourceFile !== undefined) {
@@ -339,19 +342,13 @@ export function doTextChangeOnString(currentFileText: string, change: TextChange
 
 function writeToFile(fileName: string, fileContents: string, opt: Options, host:Host): void {
   const writeToFileName = getOutputFilePath(fileName, opt);
-  const writeToDirectory =getDirectory(writeToFileName)
-  if (!fs.existsSync(writeToDirectory)) {
-    createDirectory(writeToDirectory);
+  const writeToDirectory = getDirectory(writeToFileName)
+  if (!host.exists(writeToDirectory)) {
+    host.mkdir(writeToDirectory);
   }
   host.writeFile(writeToFileName , fileContents);
   host.log("Updated " + writeToFileName); 
 }
-
-function createDirectory(directoryPath: string) {
-  fs.mkdir(directoryPath, {recursive :true}, () => {});
-}
-
-
 
 export function getFileName(filePath: string): string {
   return path.basename(filePath);
@@ -367,7 +364,7 @@ export function getRelativePath(filePath: string, opt: Options): string{
   return path.relative(getDirectory(opt.tsconfigPath), path.resolve(filePath));
 }
 
-function getOutputFilePath(filePath: string, opt: Options): string {
+export function getOutputFilePath(filePath: string, opt: Options): string {
   // this function uses absolute paths
   if (opt.replace === true){
     return filePath;
@@ -376,6 +373,7 @@ function getOutputFilePath(filePath: string, opt: Options): string {
   return path.resolve(opt.outputFolder, fileName);
 }
 
-function project(project: any, d: {}, opt: any) {
-    throw new Error("Function not implemented.");
-}
+// what is this !
+// function project(project: any, d: {}, opt: any) {
+//     throw new Error("Function not implemented.");
+// }
