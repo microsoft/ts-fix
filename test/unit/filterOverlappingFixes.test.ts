@@ -1,7 +1,7 @@
-import { Options, sortChangesByStart, filterOverlappingFixes } from "../src/index";
+import { Options, sortChangesByStart, filterOverlappingFixes } from "../../src/index";
 import path from "path";
 import { TextChange } from "typescript";
-import {makeOptions} from "../src/cli";
+import {makeOptions} from "../../src/cli";
 import { create, drop } from "lodash";
 
 const textchanges : TextChange[] = sortChangesByStart([{span: {start: 165, length: 0}, newText: 'override '},

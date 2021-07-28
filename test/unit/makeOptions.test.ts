@@ -1,5 +1,5 @@
 import path from "path";
-import {makeOptions} from "../src/cli";
+import {makeOptions} from "../../src/cli";
 
 
 //TODO: uhh the defult cwd may not nessssrily resolve to correct path on non windows
