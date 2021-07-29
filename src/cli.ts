@@ -64,6 +64,7 @@ export function makeOptions(cwd: string, args: string[]): Options {
             .argv;
     
     return {
+        cwd,
         tsconfig,
         errorCode,
         fixName,

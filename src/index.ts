@@ -1,10 +1,8 @@
 import path from "path";
-import type { CodeFixAction, Diagnostic, FileTextChanges, getDefaultFormatCodeSettings, TextChange } from "typescript";
+import type { CodeFixAction, Diagnostic, FileTextChanges, TextChange } from "typescript";
 import os from "os";
 import _ from "lodash";
 import { createProject, Project } from "./ts";
-import { string } from "yargs";
-import { PathLike } from "fs";
 
 export interface Logger {
   (...args: any[]): void;
@@ -21,39 +19,8 @@ export interface Host {
   exists: typeof import("fs").existsSync;
 }
 
-export class TestHost implements Host {
-    private filesWritten = new Map<string, string>();
-    private logged = <string[]>[];
-    private existsChecked = <(string|PathLike)[]>[];
-    private newDir = <(string|PathLike)[]>[];
-    
-    log(s:string) {this.logged.push(s)};
-    
-    writeFile(fileName: string, content: string) {
-        this.filesWritten.set(fileName, content);
-    }
-
-    exists(fileName:PathLike) {
-      this.existsChecked.push(fileName);
-      return true;
-    }
-
-    mkdir(fileName:PathLike) {
-      this.newDir.push(fileName);
-      return undefined;
-    }
-
-    getChangedFile(fileName: string) {
-        return this.filesWritten.get(fileName);
-    }
-    
-    getlogged() {
-      return this.logged.length;
-    }
-}
-
-
 export interface Options {
+  cwd: string;
   tsconfig: string;
   outputFolder: string;
   errorCode: number[];
@@ -367,7 +334,7 @@ function writeToFile(fileName: string, fileContents: string, opt: Options, host:
     host.mkdir(writeToDirectory);
   }
   host.writeFile(writeToFileName , fileContents);
-  host.log("Updated " + writeToFileName); 
+  host.log("Updated " + path.relative(opt.cwd, writeToFileName)); 
 }
 
 export function getFileName(filePath: string): string {

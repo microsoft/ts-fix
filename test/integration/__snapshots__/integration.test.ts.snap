@@ -1,0 +1,59 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`integration tests addMissingMember 0 1`] = `
+Object {
+  "args": Array [
+    "-e",
+    "2339",
+    "--write",
+  ],
+  "cwd": "cases\\\\addMissingMember",
+  "filesWritten": Map {
+    "types.ts" => "interface I {
+  two: any;
+  one: boolean;
+}",
+  },
+  "logs": Array [
+    "typescript version 4.3.5",
+    "found 2 diagnostics with code 2339",
+    "found 4 codefixes",
+    "Updated types.ts",
+    "Performing second passthrough",
+    "found 2 diagnostics with code 2339",
+    "found 4 codefixes",
+    "Updated types.ts",
+  ],
+}
+`;
+
+exports[`integration tests addMissingOverride 1 1`] = `
+Object {
+  "args": Array [
+    "-e",
+    "4114",
+    "--write",
+  ],
+  "cwd": "cases\\\\addMissingOverride",
+  "filesWritten": Map {
+    "index.ts" => "class Base {
+  m() {}
+}
+
+class Derived extends Base {
+  override m() {}
+}
+
+class MoreDerived extends Derived {
+  override m() {}
+}
+",
+  },
+  "logs": Array [
+    "typescript version 4.3.5",
+    "found 2 diagnostics with code 4114",
+    "found 2 codefixes",
+    "Updated index.ts",
+  ],
+}
+`;
