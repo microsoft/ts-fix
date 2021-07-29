@@ -7,7 +7,7 @@ Object {
     "2339",
     "--write",
   ],
-  "cwd": "cases\\\\addMissingMember",
+  "cwd": "cases/addMissingMember",
   "filesWritten": Map {
     "types.ts" => "interface I {
   two: any;
@@ -34,7 +34,7 @@ Object {
     "4114",
     "--write",
   ],
-  "cwd": "cases\\\\addMissingOverride",
+  "cwd": "cases/addMissingOverride",
   "filesWritten": Map {
     "index.ts" => "class Base {
   m() {}

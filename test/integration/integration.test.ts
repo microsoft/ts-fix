@@ -15,16 +15,16 @@ export class TestHost implements Host {
   log(s:string) {this.logged.push(s)};
   
   writeFile(fileName: string, content: string) {
-      this.filesWritten.set(path.relative(this.cwd, fileName), content);
+      this.filesWritten.set(normalizeSlashes(path.relative(this.cwd, fileName)), content);
   }
 
   exists(fileName: PathLike) {
-    this.existsChecked.push(fileName.toString());
+    this.existsChecked.push(normalizeSlashes(fileName.toString()));
     return true;
   }
 
   mkdir(fileName: PathLike) {
-    this.dirMade.push(fileName.toString());
+    this.dirMade.push(normalizeSlashes(fileName.toString()));
     return undefined;
   }
 
@@ -50,17 +50,22 @@ export class TestHost implements Host {
   
 }
 
+function normalizeSlashes(path:string) : string{
+    return  path.replace(/\\/g, '/');
+}
+
 async function baselineCLI(cwd: string, args: string[]) {
   const host = new TestHost(cwd);
   const options = makeOptions(cwd, args);
   await codefixProject(options, host);
   
   const snapshot = {
-    cwd: path.relative(__dirname, cwd),
+    cwd: normalizeSlashes(path.relative(__dirname, cwd)),
     args,
     logs: host.getLogs(),
     filesWritten: host.getFilesWritten(),
   };
+  console.log(snapshot.cwd)
 
   expect(snapshot).toMatchSnapshot();
 }
@@ -84,6 +89,8 @@ const cases = fs.readdirSync(path.resolve(__dirname, "cases")).flatMap(dirName =
 describe("integration tests", () => {
   test.each(cases)("%s %#", async (dirName, args) => {
     const cwd = path.resolve(__dirname, "cases", dirName);
-    await baselineCLI(cwd, args);
+    // console.log(path.posix.normalize(cwd));
+    await baselineCLI(path.posix.normalize(cwd), args);
   });
 });
+
