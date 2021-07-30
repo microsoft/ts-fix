@@ -94,7 +94,6 @@ export function makeOptions(cwd: string, args: string[]): Options {
 // changedFiles: [ ... ]
 if (!module.parent) {
     const opt = makeOptions(process.cwd(), process.argv.slice(2));
-
     console.log(opt);
     codefixProject(opt, new CLIHost(process.cwd()));
     

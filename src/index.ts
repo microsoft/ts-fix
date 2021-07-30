@@ -113,6 +113,11 @@ export interface Options {
 }
 
 export async function codefixProject(opt:Options, host: Host) {
+  if (opt.errorCode.length === 0 && opt.fixName.length === 0) {
+    host.log("Warning! Not specifying either code fix names or error codes often results in unwanted changes.");
+    process.exit(0);
+  }
+
   const allChangedFiles = new Map<string, ChangedFile>();
   let passCount = -1;
   while (++passCount < 2)  {
@@ -281,8 +286,11 @@ export function getTextChangeDict(codefixes: readonly CodeFixAction[], opt: Opti
 
     for (let j = 0; j < changes.length; j++) {
       let change = changes[j];
-      let [key, value] = getFileNameAndTextChangesFromCodeFix(change);
-
+      let validChanges = getFileNameAndTextChangesFromCodeFix(change);
+      if (validChanges === undefined){
+        continue
+      }
+      let [key, value] = validChanges;
       const prevVal = textChangeDict.get(key);
       if (prevVal === undefined) {
         textChangeDict.set(key, value);
@@ -330,7 +338,10 @@ export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], fi
   return [filteredFixes, out];
 }
 
-function getFileNameAndTextChangesFromCodeFix(ftchanges: FileTextChanges): [string, TextChange[]] {
+function getFileNameAndTextChangesFromCodeFix(ftchanges: FileTextChanges): [string, TextChange[]]|undefined {
+  if (/[\\/]node_modules[\\/]/.test(ftchanges.fileName)){
+    return undefined;
+  }
   return [ftchanges.fileName, [...ftchanges.textChanges]];
 }
 
