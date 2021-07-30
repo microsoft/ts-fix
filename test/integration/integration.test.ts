@@ -65,8 +65,6 @@ async function baselineCLI(cwd: string, args: string[]) {
     logs: host.getLogs(),
     filesWritten: host.getFilesWritten(),
   };
-  console.log(snapshot.cwd)
-
   expect(snapshot).toMatchSnapshot();
 }
 
@@ -89,7 +87,6 @@ const cases = fs.readdirSync(path.resolve(__dirname, "cases")).flatMap(dirName =
 describe("integration tests", () => {
   test.each(cases)("%s %#", async (dirName, args) => {
     const cwd = path.resolve(__dirname, "cases", dirName);
-    // console.log(path.posix.normalize(cwd));
     await baselineCLI(path.posix.normalize(cwd), args);
   });
 });

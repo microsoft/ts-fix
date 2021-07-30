@@ -197,7 +197,7 @@ export function getTextChangeDict(codefixes: readonly CodeFixAction[], opt: Opti
   return [textChangeDict, out];
 }
 
-export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], fixNames: string[]): [readonly CodeFixAction[], string[]] { //tested partially (need to test output)
+export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], fixNames: string[]): [readonly CodeFixAction[], string[]] { //tested
   if (fixNames.length === 0) {
     // empty argument behavior... currently, we just keep all fixes if none are specified
     return [codefixes, ["found " + codefixes.length + " codefixes"]];
@@ -247,10 +247,9 @@ function doAllTextChanges(project: Project, textChanges: Map<string, TextChange[
       // collision is true if there were changes that were not applied 
       // also performs the writing to the file
       let [out, newFileContents] = applyCodefixesInFile(originalFileContents, fileFixes);
-      notAppliedChanges = out;
+      out.forEach((change) => {notAppliedChanges.push(change)});
       writeToFile(fileName, newFileContents, opt, host);
     }
-
     else {
       throw new Error('file ' + fileName + ' not found in project');
     }
@@ -269,8 +268,6 @@ function applyCodefixesInFile(originalContents: string, textChanges: TextChange[
   // apply all remaining textchanges
   const newFileContents = applyChangestoFile(originalContents, filteredFixList);
   
-  // return 
-  // if all fixes have been applied, then it is False that we expect to do another pass
   return [notAppliedFixes, newFileContents];
 }
 

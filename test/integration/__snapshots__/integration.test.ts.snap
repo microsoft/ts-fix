@@ -57,3 +57,64 @@ class MoreDerived extends Derived {
   ],
 }
 `;
+
+exports[`integration tests addOneUnknown 2 1`] = `
+Object {
+  "args": Array [
+    "-e",
+    "2352",
+    "--write",
+  ],
+  "cwd": "cases/addOneUnknown",
+  "filesWritten": Map {
+    "index.ts" => "<object><unknown>\\"words\\";",
+  },
+  "logs": Array [
+    "typescript version 4.3.5",
+    "found 1 diagnostics with code 2352",
+    "found 1 codefixes",
+    "Updated index.ts",
+  ],
+}
+`;
+
+exports[`integration tests addOneUnknownToList 3 1`] = `
+Object {
+  "args": Array [
+    "-e",
+    "2352",
+    "--write",
+  ],
+  "cwd": "cases/addOneUnknownToList",
+  "filesWritten": Map {},
+  "logs": Array [
+    "typescript version 4.3.5",
+    "no diagnostics found with code 2352",
+    "found 0 codefixes",
+  ],
+}
+`;
+
+exports[`integration tests addThreeUnknown 4 1`] = `
+Object {
+  "args": Array [
+    "-e",
+    "2352",
+    "--write",
+  ],
+  "cwd": "cases/addThreeUnknown",
+  "filesWritten": Map {
+    "index.ts" => "<string>[\\"words\\"];
+
+<object><unknown>\\"words\\";
+
+<string><unknown>0 * (4 + 3) / 100;",
+  },
+  "logs": Array [
+    "typescript version 4.3.5",
+    "found 2 diagnostics with code 2352",
+    "found 2 codefixes",
+    "Updated index.ts",
+  ],
+}
+`;
