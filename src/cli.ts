@@ -3,8 +3,7 @@
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import yargs, { boolean, string } from 'yargs';
 import path from "path";
-import { Options, codefixProject, Host } from '.';
-import { silent } from 'import-cwd';
+import { Options, codefixProject, CLIHost } from '.';
 
 export function makeOptions(cwd: string, args: string[]): Options {
     const {
@@ -69,24 +68,26 @@ export function makeOptions(cwd: string, args: string[]): Options {
         errorCode,
         fixName,
         write,
-        verbose,
+        verbose, // TODO, not sure if this does anything after redoing CLIHost
         outputFolder: outputFolder ? path.resolve(cwd, outputFolder) : path.dirname(tsconfig)
     };
 }
 
-const cliHost: Host = {
-    log: console.log.bind(console),
-    writeFile: (fileName, content) => writeFileSync(fileName, content, 'utf8'),
-    mkdir: (directoryPath) => mkdirSync(directoryPath, {recursive: true}),
-    exists: existsSync
-};
+// const cliHost : Host =  {
+//     log: console.log.bind(console),
+//     writeFile: (fileName, content) => writeFileSync(fileName, content, 'utf8'),
+//     mkdir: (directoryPath) => mkdirSync(directoryPath, {recursive: true}),
+//     exists: existsSync, 
+//     remainingChanges: [] 
+// };
 
-const silentHost: Host = {
-    log: ()=>{},
-    writeFile: (fileName, content) => writeFileSync(fileName, content, 'utf8'),
-    mkdir: (directoryPath) => mkdirSync(directoryPath, {recursive: true}),
-    exists: existsSync
-}
+
+// const silentHost: Host = {
+//     log: ()=>{},
+//     writeFile: (fileName, content) => writeFileSync(fileName, content, 'utf8'),
+//     mkdir: (directoryPath) => mkdirSync(directoryPath, {recursive: true}),
+//     exists: existsSync
+// }
 
 // runCli('--tsconfig ./blah/whatever/tsconfig.json --fixNames 23423', testHost);
 // logs: [ ... ]
@@ -95,13 +96,8 @@ if (!module.parent) {
     const opt = makeOptions(process.cwd(), process.argv.slice(2));
 
     console.log(opt);
+    codefixProject(opt, new CLIHost(process.cwd()));
     
-    if (opt.verbose === true){
-        codefixProject(opt, cliHost);
-    }
-    else {
-        codefixProject(opt, silentHost);
-    }
 }
 
 //DONE: print out how many errors matched

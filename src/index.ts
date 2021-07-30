@@ -3,6 +3,8 @@ import type { CodeFixAction, Diagnostic, FileTextChanges, TextChange } from "typ
 import os from "os";
 import _ from "lodash";
 import { createProject, Project } from "./ts";
+import { PathLike, writeFileSync, mkdirSync, existsSync } from "fs";
+
 
 export interface Logger {
   (...args: any[]): void;
@@ -13,10 +15,91 @@ export interface Logger {
 }
 
 export interface Host {
-  writeFile(fileName: string, content: string): void;
+  // Adds fileto filechange map
+  stageFile(fileName: string, content: ChangedFile): void;
+
+  // Adds map of file to filechange map
+  addChangedFiles (changesDict: ReadonlyMap<string, ChangedFile>): void;
+
+  // Returns one particular changed file
+  getChangedFile(fileName: string) : ChangedFile | undefined;
+
+  // Returns entire map of file changes
+  getAllChangedFiles() : ReadonlyMap<string, ChangedFile>;
+
+  // Emits to actual files ALL files that have been staged
+  writeFiles(opt:Options):void;
+
+  // Emits one particular file with input fileName and content string
+  writeFile (fileName:string, content:string) : void;
+
+  // Returns all text changes that were not applied
+  getRemainingChanges: () => (ReadonlyMap<string, readonly TextChange[]>)[];
+
+  // Adds map of text changes that were not applied
+  addRemainingChange: (changelist:ReadonlyMap<string, readonly TextChange[]>) => void;
+
   log: Logger;
   mkdir: typeof import("fs").mkdirSync;
   exists: typeof import("fs").existsSync;
+
+}
+
+export class CLIHost implements Host {
+  private remainingChanges : (ReadonlyMap<string, readonly TextChange[]>)[] = [];
+  private allChangedFiles = new Map<string, ChangedFile>();
+
+  constructor(private cwd:string) {};
+
+  stageFile(fileName:string, content:ChangedFile) {this.allChangedFiles.set(fileName, content);};
+
+  addChangedFiles(changesDict: ReadonlyMap<string, ChangedFile>) : void {
+    changesDict.forEach((change, fileName) => {
+      this.stageFile(fileName,change)
+    });
+  }
+
+  getChangedFile(fileName:string) { return this.allChangedFiles.get(fileName)};
+
+  getAllChangedFiles() {return this.allChangedFiles};
+
+  writeFiles(opt:Options){
+    this.allChangedFiles.forEach((change, fileName) => {
+      this.writeToFile(fileName, change.newText, opt)
+    })
+    // allChangedFiles.forEach((fileName, fileChange) => {
+    //   writeFileSync(fileName, content, 'utf8')};
+    // });
+  };
+
+  // REUSED ELSEWHERE, just here for now just in case
+  // private writeChangedFiles(changedFiles: ReadonlyMap<string, ChangedFile>, options: Options) {
+  //   changedFiles.forEach((file, fileName) => 
+  //   this.writeToFile(fileName, file.newText, options));
+  // }
+
+  private writeToFile(fileName: string, fileContents: string, opt: Options): void {
+    const writeToFileName = getOutputFilePath(fileName, opt);
+    const writeToDirectory = getDirectory(writeToFileName)
+    if (!this.exists(writeToDirectory)) {
+      this.mkdir(writeToDirectory);
+    }
+    this.writeFile(writeToFileName , fileContents);
+    this.log("Updated " + path.relative(opt.cwd, writeToFileName)); 
+  }
+
+  writeFile (fileName:string, content:string) { writeFileSync(fileName, content, 'utf8') };
+
+  getRemainingChanges() {return this.remainingChanges};
+
+  addRemainingChange(changeList: ReadonlyMap<string, readonly TextChange[]>) {this.remainingChanges.push(changeList)};
+
+
+  log(s:string) {console.log(s)};
+
+  mkdir(directoryPath:PathLike) {return mkdirSync(directoryPath, {recursive: true})};
+  
+  exists(fileName:PathLike) {return existsSync(fileName)};
 }
 
 export interface Options {
@@ -47,25 +130,34 @@ export async function codefixProject(opt:Options, host: Host) {
 
     const textChangesByFile = await getCodeFixesFromProject(project, opt, host);
     const { changedFiles, excessChanges } = getChangedFiles(project, textChangesByFile);
+    host.addChangedFiles(changedFiles);
+    host.addRemainingChange(excessChanges); 
     
-    if (opt.write) {
-      // Edit each file if --write is true
-      writeChangedFiles(changedFiles, opt, host);
-    } else {
-      // Later passes incorporate changes from earlier passes, so overwriting is ok
-      changedFiles.forEach((file, fileName) => allChangedFiles.set(fileName, file));
-    }
+    // if (opt.write) {
+    //   // Edit each file if --write is true
+    //   host.writeFiles(opt);
+    // } else {
+    //   // Later passes incorporate changes from earlier passes, so overwriting is ok
+    //   changedFiles.forEach((file, fileName) => allChangedFiles.set(fileName, file));
+    // }
 
     if (!excessChanges.size) {
       break;
     }
   }
 
-  if (!opt.write) {
-    // TODO: report what files *would* have been changed
+  if (opt.write) {
+    host.writeFiles(opt)
+  } else {
+    // TODO: report what files *would* have been changed 
+    // -- do we really want it to possibly be printing hundereds of lines?
+    host.log("Changes detected in the following files:");
+    allChangedFiles.forEach((_, fileName) => {
+      host.log("   " + fileName);
+    });
   }
 
-  return;
+  return host;
 }
 
 export async function getCodeFixesFromProject(project: Project, opt: Options, host: Host): Promise<Map<string,TextChange[]>> { 
@@ -271,9 +363,7 @@ function getChangedFiles(project: Project, textChanges: Map<string, TextChange[]
   return { excessChanges, changedFiles };
 }
 
-function writeChangedFiles(changedFiles: ReadonlyMap<string, ChangedFile>, options: Options, host: Host) {
-  changedFiles.forEach((file, fileName) => writeToFile(fileName, file.newText, options, host));
-}
+
 
 function applyCodefixesInFile(originalContents: string, textChanges: TextChange[]):  [TextChange[], string] {
   // sort textchanges by start
@@ -341,15 +431,6 @@ export function doTextChangeOnString(currentFileText: string, change: TextChange
 }
 
 
-function writeToFile(fileName: string, fileContents: string, opt: Options, host:Host): void {
-  const writeToFileName = getOutputFilePath(fileName, opt);
-  const writeToDirectory = getDirectory(writeToFileName)
-  if (!host.exists(writeToDirectory)) {
-    host.mkdir(writeToDirectory);
-  }
-  host.writeFile(writeToFileName , fileContents);
-  host.log("Updated " + path.relative(opt.cwd, writeToFileName)); 
-}
 
 export function getFileName(filePath: string): string {
   return path.basename(filePath);
