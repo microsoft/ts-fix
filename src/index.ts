@@ -112,10 +112,9 @@ export interface Options {
   verbose: boolean
 }
 
-export async function codefixProject(opt:Options, host: Host) {
+export async function codefixProject(opt:Options, host: Host): Promise< string |Host> {
   if (opt.errorCode.length === 0 && opt.fixName.length === 0) {
-    host.log("Warning! Not specifying either code fix names or error codes often results in unwanted changes.");
-    process.exit(0);
+    return "Warning! Not specifying either code fix names or error codes often results in unwanted changes.";
   }
 
   const allChangedFiles = new Map<string, ChangedFile>();
@@ -123,8 +122,7 @@ export async function codefixProject(opt:Options, host: Host) {
   while (++passCount < 2)  {
     const project = createProject({ tsConfigFilePath: opt.tsconfig });
     if (!project) {
-      host.log("Error: Could not create project.");
-      process.exit(1);
+       return "Error: Could not create project.";
     }
 
     if (passCount === 0) {

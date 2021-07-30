@@ -134,11 +134,7 @@ Object {
   ],
   "cwd": "cases/noDiagnostics",
   "filesWritten": Map {},
-  "logs": Array [
-    "Using TypeScript 4.3.5",
-    "Found 2051 diagnostics in 88 files",
-    "Found 104 codefixes",
-  ],
+  "logs": Array [],
 }
 `;
 
@@ -149,10 +145,6 @@ Object {
   ],
   "cwd": "cases/onePassthrough",
   "filesWritten": Map {},
-  "logs": Array [
-    "Using TypeScript 4.3.5",
-    "Found 2051 diagnostics in 88 files",
-    "Found 104 codefixes",
-  ],
+  "logs": Array [],
 }
 `;
