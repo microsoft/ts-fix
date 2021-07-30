@@ -30,36 +30,42 @@ export interface Options {
 }
 
 export async function codefixProject(opt:Options, host: Host) {
-
-  const project = createProject({ tsConfigFilePath: opt.tsconfig });
-  if (!project) {
-    host.log("Error: Could not create project.");
-    process.exit(1);
-  }
-  host.log("typescript version "  + project.ts.version)
-  const textChangesByFile = await getCodeFixesFromProject(project, opt, host);
-  
-  // edit each file if --write is true
-  if (opt.write) {
-    let leftoverChanges = doAllTextChanges(project, textChangesByFile, opt, host);
-
-    // if overlap/non executed changes for any reason, redo process 
-    if (leftoverChanges.length > 0) {
-      // maybe in getCodeFixesFromProject we have an exit if no changes?
-      host.log("Performing second passthrough")
-      const project2 = createProject({ tsConfigFilePath: opt.tsconfig });
-      if (!project2) {
-        host.log("Error: Could not create project.");
-        process.exit(1);
-      }
-      const textChangesByFile2 = await getCodeFixesFromProject(project2, opt, host);
-      return doAllTextChanges(project2, textChangesByFile2, opt, host);
+  const allChangedFiles = new Map<string, ChangedFile>();
+  let passCount = -1;
+  while (++passCount < 2)  {
+    const project = createProject({ tsConfigFilePath: opt.tsconfig });
+    if (!project) {
+      host.log("Error: Could not create project.");
+      process.exit(1);
     }
-    return leftoverChanges;
+
+    if (passCount === 0) {
+      host.log("Using TypeScript " + project.ts.version);
+    } else {
+      host.log("Overlapping changes detected. Performing additional pass...");
+    }
+
+    const textChangesByFile = await getCodeFixesFromProject(project, opt, host);
+    const { changedFiles, excessChanges } = getChangedFiles(project, textChangesByFile);
+    
+    if (opt.write) {
+      // Edit each file if --write is true
+      writeChangedFiles(changedFiles, opt, host);
+    } else {
+      // Later passes incorporate changes from earlier passes, so overwriting is ok
+      changedFiles.forEach((file, fileName) => allChangedFiles.set(fileName, file));
+    }
+
+    if (!excessChanges.size) {
+      break;
+    }
   }
 
-  // otherwise, done
-  return [];
+  if (!opt.write) {
+    // TODO: report what files *would* have been changed
+  }
+
+  return;
 }
 
 export async function getCodeFixesFromProject(project: Project, opt: Options, host: Host): Promise<Map<string,TextChange[]>> { 
@@ -136,16 +142,16 @@ export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[]
     errorCodes.forEach((code: number) => {
       const count = errorCounter.get(code);
       if (count === undefined) {
-        returnStrings.push("no diagnostics found with code " + code)
+        returnStrings.push("No diagnostics found with code " + code)
       } else {
-        returnStrings.push( "found " + count + " diagnostics with code " + code );
+        returnStrings.push( "Found " + count + " diagnostics with code " + code );
       }
     });
     
     return [filteredDiagnostics, returnStrings];
   }
   // otherwise, use all errors
-  return [diagnostics, ["found " + _.reduce(diagnostics.map((d: { length: any; }) => d.length), function(sum, n) {
+  return [diagnostics, ["Found " + _.reduce(diagnostics.map((d: { length: any; }) => d.length), function(sum, n) {
       return sum + n;}, 0) + " diagnostics in " + diagnostics.length + " files"]];
 }
 
@@ -200,7 +206,7 @@ export function getTextChangeDict(codefixes: readonly CodeFixAction[], opt: Opti
 export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], fixNames: string[]): [readonly CodeFixAction[], string[]] { //tested
   if (fixNames.length === 0) {
     // empty argument behavior... currently, we just keep all fixes if none are specified
-    return [codefixes, ["found " + codefixes.length + " codefixes"]];
+    return [codefixes, ["Found " + codefixes.length + " codefixes"]];
   }
   // cannot sort by fixId right now since fixId is a {}
   // do we want to distinguish the case when no codefixes are picked? (no hits)
@@ -223,9 +229,9 @@ export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], fi
   fixNames.forEach((name: string) => {
     const count = fixCounter.get(name);
     if (count === undefined) {
-      out.push("no codefixes found with name " + name)
+      out.push("No codefixes found with name " + name)
     } else {
-      out.push( "found " + count + " codefixes with name " + name);
+      out.push( "Found " + count + " codefixes with name " + name);
     }
   });
   
@@ -236,8 +242,15 @@ function getFileNameAndTextChangesFromCodeFix(ftchanges: FileTextChanges): [stri
   return [ftchanges.fileName, [...ftchanges.textChanges]];
 }
 
-function doAllTextChanges(project: Project, textChanges: Map<string, TextChange[]>, opt: Options, host: Host): TextChange[] {
-  let notAppliedChanges =<TextChange[]>[];
+interface ChangedFile {
+  originalText: string;
+  newText: string;
+}
+
+function getChangedFiles(project: Project, textChanges: Map<string, TextChange[]>): { changedFiles: ReadonlyMap<string, ChangedFile>, excessChanges: ReadonlyMap<string, readonly TextChange[]> } {
+  const excessChanges = new Map<string, TextChange[]>();
+  const changedFiles = new Map<string, ChangedFile>();
+
   textChanges.forEach((fileFixes: TextChange[], fileName: string) => {
     const sourceFile = project.program.getSourceFile(fileName);
 
@@ -246,16 +259,20 @@ function doAllTextChanges(project: Project, textChanges: Map<string, TextChange[
 
       // collision is true if there were changes that were not applied 
       // also performs the writing to the file
-      let [out, newFileContents] = applyCodefixesInFile(originalFileContents, fileFixes);
-      out.forEach((change) => {notAppliedChanges.push(change)});
-      writeToFile(fileName, newFileContents, opt, host);
+      const [overlappingChanges, newFileContents] = applyCodefixesInFile(originalFileContents, fileFixes);
+      excessChanges.set(fileName, overlappingChanges);
+      changedFiles.set(fileName, { originalText: originalFileContents, newText: newFileContents });
     }
     else {
-      throw new Error('file ' + fileName + ' not found in project');
+      throw new Error('File ' + fileName + ' not found in project');
     }
   });
 
-  return notAppliedChanges;
+  return { excessChanges, changedFiles };
+}
+
+function writeChangedFiles(changedFiles: ReadonlyMap<string, ChangedFile>, options: Options, host: Host) {
+  changedFiles.forEach((file, fileName) => writeToFile(fileName, file.newText, options, host));
 }
 
 function applyCodefixesInFile(originalContents: string, textChanges: TextChange[]):  [TextChange[], string] {

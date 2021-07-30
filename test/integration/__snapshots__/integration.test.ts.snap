@@ -15,13 +15,13 @@ Object {
 }",
   },
   "logs": Array [
-    "typescript version 4.3.5",
-    "found 2 diagnostics with code 2339",
-    "found 4 codefixes",
+    "Using TypeScript 4.3.5",
+    "Found 2 diagnostics with code 2339",
+    "Found 4 codefixes",
     "Updated types.ts",
-    "Performing second passthrough",
-    "found 2 diagnostics with code 2339",
-    "found 4 codefixes",
+    "Overlapping changes detected. Performing additional pass...",
+    "Found 2 diagnostics with code 2339",
+    "Found 4 codefixes",
     "Updated types.ts",
   ],
 }
@@ -50,9 +50,13 @@ class MoreDerived extends Derived {
 ",
   },
   "logs": Array [
-    "typescript version 4.3.5",
-    "found 2 diagnostics with code 4114",
-    "found 2 codefixes",
+    "Using TypeScript 4.3.5",
+    "Found 2 diagnostics with code 4114",
+    "Found 2 codefixes",
+    "Updated index.ts",
+    "Overlapping changes detected. Performing additional pass...",
+    "Found 2 diagnostics with code 4114",
+    "Found 2 codefixes",
     "Updated index.ts",
   ],
 }
@@ -70,9 +74,13 @@ Object {
     "index.ts" => "<object><unknown>\\"words\\";",
   },
   "logs": Array [
-    "typescript version 4.3.5",
-    "found 1 diagnostics with code 2352",
-    "found 1 codefixes",
+    "Using TypeScript 4.3.5",
+    "Found 1 diagnostics with code 2352",
+    "Found 1 codefixes",
+    "Updated index.ts",
+    "Overlapping changes detected. Performing additional pass...",
+    "Found 1 diagnostics with code 2352",
+    "Found 1 codefixes",
     "Updated index.ts",
   ],
 }
@@ -88,9 +96,9 @@ Object {
   "cwd": "cases/addOneUnknownToList",
   "filesWritten": Map {},
   "logs": Array [
-    "typescript version 4.3.5",
-    "no diagnostics found with code 2352",
-    "found 0 codefixes",
+    "Using TypeScript 4.3.5",
+    "No diagnostics found with code 2352",
+    "Found 0 codefixes",
   ],
 }
 `;
@@ -111,9 +119,13 @@ Object {
 <string><unknown>0 * (4 + 3) / 100;",
   },
   "logs": Array [
-    "typescript version 4.3.5",
-    "found 2 diagnostics with code 2352",
-    "found 2 codefixes",
+    "Using TypeScript 4.3.5",
+    "Found 2 diagnostics with code 2352",
+    "Found 2 codefixes",
+    "Updated index.ts",
+    "Overlapping changes detected. Performing additional pass...",
+    "Found 2 diagnostics with code 2352",
+    "Found 2 codefixes",
     "Updated index.ts",
   ],
 }

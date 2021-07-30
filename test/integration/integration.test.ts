@@ -74,16 +74,6 @@ const cases = fs.readdirSync(path.resolve(__dirname, "cases")).flatMap(dirName =
   return commands.filter(c => c.trim().length > 0).map(c => c.split(" ").slice(1)).map((args): [string, string[]] => [dirName, args]);
 });
 
-/**
- * [
- *   ["addMissingMember", ["-e", "2339"]],
- *   ["addMissingMember", ["-e", "1234"]],
- *   ["addMissingOverride", ["-f", "addMissingOverride"]]
- * ]
- */
-
-// console.log(cases);
-
 describe("integration tests", () => {
   test.each(cases)("%s %#", async (dirName, args) => {
     const cwd = path.resolve(__dirname, "cases", dirName);
