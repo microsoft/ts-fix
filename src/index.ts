@@ -37,7 +37,7 @@ export interface Host {
   getRemainingChanges: () => (ReadonlyMap<string, readonly TextChange[]>)[];
 
   // Adds map of text changes that were not applied
-  addRemainingChange: (changelist:ReadonlyMap<string, readonly TextChange[]>) => void;
+  addRemainingChanges: (changelist:ReadonlyMap<string, readonly TextChange[]>) => void;
 
   log: Logger;
   mkdir: typeof import("fs").mkdirSync;
@@ -88,11 +88,11 @@ export class CLIHost implements Host {
     this.log("Updated " + path.relative(opt.cwd, writeToFileName)); 
   }
 
-  writeFile (fileName:string, content:string) { writeFileSync(fileName, content, 'utf8') };
+  writeFile(fileName:string, content:string) { writeFileSync(fileName, content, 'utf8') };
 
   getRemainingChanges() {return this.remainingChanges};
 
-  addRemainingChange(changeList: ReadonlyMap<string, readonly TextChange[]>) {this.remainingChanges.push(changeList)};
+  addRemainingChanges(changeList: ReadonlyMap<string, readonly TextChange[]>) {this.remainingChanges.push(changeList)};
 
 
   log(s:string) {console.log(s)};
@@ -131,7 +131,7 @@ export async function codefixProject(opt:Options, host: Host) {
     const textChangesByFile = await getCodeFixesFromProject(project, opt, host);
     const { changedFiles, excessChanges } = getChangedFiles(project, textChangesByFile);
     host.addChangedFiles(changedFiles);
-    host.addRemainingChange(excessChanges); 
+    host.addRemainingChanges(excessChanges); 
     
     // if (opt.write) {
     //   // Edit each file if --write is true
@@ -334,7 +334,7 @@ function getFileNameAndTextChangesFromCodeFix(ftchanges: FileTextChanges): [stri
   return [ftchanges.fileName, [...ftchanges.textChanges]];
 }
 
-interface ChangedFile {
+export interface ChangedFile {
   originalText: string;
   newText: string;
 }

@@ -1,53 +1,78 @@
 import fs from "fs";
 import path from "path";
-import { codefixProject, Host } from "../../src";
+import { codefixProject, Host, getOutputFilePath, getDirectory, ChangedFile, Options } from "../../src";
 import { PathLike } from "fs";
 import { makeOptions } from "../../src/cli";
+import { TextChange } from "typescript";
 
 export class TestHost implements Host {
   private filesWritten = new Map<string, string>();
   private logged: string[] = [];
   private existsChecked: string[] = [];
   private dirMade: string[] = [];
+  private remainingChanges : (ReadonlyMap<string, readonly TextChange[]>)[] = [];
+  private allChangedFiles = new Map<string, ChangedFile>();
 
-  constructor(private cwd: string) {}
-  
-  log(s:string) {this.logged.push(s)};
-  
+
+  constructor(private cwd: string) {};
+  stageFile(fileName:string, content:ChangedFile) {this.allChangedFiles.set(fileName, content);};
+
+  addChangedFiles(changesDict: ReadonlyMap<string, ChangedFile>) : void {
+    changesDict.forEach((change, fileName) => {
+      this.stageFile(fileName,change)
+    });
+  }
+
+  getChangedFile(fileName:string) { return this.allChangedFiles.get(fileName)};
+
+  getAllChangedFiles() {return this.allChangedFiles};
+
+  writeFiles(opt:Options){
+    this.allChangedFiles.forEach((change, fileName) => {
+      this.writeToFile(fileName, change.newText, opt)
+    })
+  };
+
+  private writeToFile(fileName: string, fileContents: string, opt: Options): void {
+    const writeToFileName = getOutputFilePath(fileName, opt);
+    const writeToDirectory = getDirectory(writeToFileName)
+    if (!this.exists(writeToDirectory)) {
+      this.mkdir(writeToDirectory);
+    }
+    this.writeFile(writeToFileName , fileContents);
+    this.log("Updated " + path.relative(opt.cwd, writeToFileName)); 
+  }
+
   writeFile(fileName: string, content: string) {
       this.filesWritten.set(normalizeSlashes(path.relative(this.cwd, fileName)), content);
   }
+  
+  getRemainingChanges() {return this.remainingChanges};
+
+  addRemainingChanges(changeList: ReadonlyMap<string, readonly TextChange[]>) {this.remainingChanges.push(changeList)};
+
+
+  log(s:string) {this.logged.push(s)};
 
   exists(fileName: PathLike) {
     this.existsChecked.push(normalizeSlashes(fileName.toString()));
     return true;
   }
-
   mkdir(fileName: PathLike) {
     this.dirMade.push(normalizeSlashes(fileName.toString()));
     return undefined;
   }
 
-  getChangedFile(fileName: string) {
-      return this.filesWritten.get(fileName);
-  }
-  
   getLogs() {
     return this.logged;
   }
 
   getFilesWritten() {
-      return this.filesWritten;
-  }
+      return this.filesWritten;  }
   
-  getExistsChecked() {
-      return this.existsChecked;
-  }
+  getExistsChecked() {  return this.existsChecked;  }
 
-  getDirMade() {
-      return this.dirMade;
-  }
-  
+  getDirMade() {  return this.dirMade;  }
 }
 
 function normalizeSlashes(path:string) : string{
