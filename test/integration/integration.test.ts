@@ -11,38 +11,9 @@ export class TestHost implements Host {
   private existsChecked: string[] = [];
   private dirMade: string[] = [];
   private remainingChanges : (ReadonlyMap<string, readonly TextChange[]>)[] = [];
-  private allChangedFiles = new Map<string, ChangedFile>();
-
 
   constructor(private cwd: string) {};
-  stageFile(fileName:string, content:ChangedFile) {this.allChangedFiles.set(fileName, content);};
-
-  addChangedFiles(changesDict: ReadonlyMap<string, ChangedFile>) : void {
-    changesDict.forEach((change, fileName) => {
-      this.stageFile(fileName,change)
-    });
-  }
-
-  getChangedFile(fileName:string) { return this.allChangedFiles.get(fileName)};
-
-  getAllChangedFiles() {return this.allChangedFiles};
-
-  writeFiles(opt:Options){
-    this.allChangedFiles.forEach((change, fileName) => {
-      this.writeToFile(fileName, change.newText, opt)
-    })
-  };
-
-  private writeToFile(fileName: string, fileContents: string, opt: Options): void {
-    const writeToFileName = getOutputFilePath(fileName, opt);
-    const writeToDirectory = getDirectory(writeToFileName)
-    if (!this.exists(writeToDirectory)) {
-      this.mkdir(writeToDirectory);
-    }
-    this.writeFile(writeToFileName , fileContents);
-    this.log("Updated " + path.relative(opt.cwd, writeToFileName)); 
-  }
-
+  
   writeFile(fileName: string, content: string) {
       this.filesWritten.set(normalizeSlashes(path.relative(this.cwd, fileName)), content);
   }

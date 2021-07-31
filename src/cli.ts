@@ -94,8 +94,11 @@ export function makeOptions(cwd: string, args: string[]): Options {
 // changedFiles: [ ... ]
 if (!module.parent) {
     const opt = makeOptions(process.cwd(), process.argv.slice(2));
-    console.log(opt);
-    const error = codefixProject(opt, new CLIHost(process.cwd()));
+    let host = new CLIHost(process.cwd());
+    (async() => { 
+        const error = await codefixProject(opt, host);
+        host.log(error);
+    }) ;
         // error is a string if codefixProject did an error
 }
 
