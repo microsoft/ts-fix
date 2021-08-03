@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import importCwd from "import-cwd";
 import type { LanguageService, LanguageServiceHost, ParseConfigFileHost, Program } from "typescript";
+import { ChangedFile } from ".";
 
 function isTypeScriptVersionSupported(major: number, minor: number) {
   if (major < 3) return false;
@@ -32,13 +33,20 @@ export interface Project {
   program: Program;
 }
 
-export function createProject(options: CreateProjectOptions): Project | undefined {
+export function createProject(options: CreateProjectOptions, changedFiles: Map<string, ChangedFile>): Project | undefined {
+  function readFile(path:string,): string|undefined {
+    if (changedFiles.get(path) !== undefined ){
+      return changedFiles.get(path)?.newText;
+    }
+    return ts.sys.readFile(path);
+  }
+
   const ts = loadTypeScript();
   const parseConfigHost: ParseConfigFileHost = {
     fileExists: ts.sys.fileExists,
     getCurrentDirectory: ts.sys.getCurrentDirectory,
     readDirectory: ts.sys.readDirectory,
-    readFile: ts.sys.readFile,
+    readFile: readFile,
     useCaseSensitiveFileNames: ts.sys.useCaseSensitiveFileNames,
     onUnRecoverableConfigFileDiagnostic: diagnostic => {
       const message = ts.formatDiagnosticsWithColorAndContext([diagnostic], {
@@ -60,7 +68,7 @@ export function createProject(options: CreateProjectOptions): Project | undefine
     getCurrentDirectory: ts.sys.getCurrentDirectory,
     getDefaultLibFileName: ts.getDefaultLibFileName,
     fileExists: ts.sys.fileExists,
-    readFile: ts.sys.readFile,
+    readFile: readFile,
     readDirectory: ts.sys.readDirectory,
     directoryExists: ts.sys.directoryExists,
     getDirectories: ts.sys.getDirectories,
@@ -82,6 +90,3 @@ export function createProject(options: CreateProjectOptions): Project | undefine
   return { ts, languageService, program };
 }
 
-function parseInt(_major: any, _arg1: number): number {
-    throw new Error("Function not implemented.");
-}
