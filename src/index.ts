@@ -67,7 +67,7 @@ export async function codefixProject(opt:Options, host: Host): Promise<string> {
   const allChangedFiles = new Map<string, ChangedFile>();
   let passCount = -1;
   while (++passCount < 2)  {
-    const project = createProject({ tsConfigFilePath: opt.tsconfig });
+    const project = createProject({ tsConfigFilePath: opt.tsconfig }, allChangedFiles);
     if (!project) {
        return "Error: Could not create project.";
     }
@@ -93,8 +93,10 @@ export async function codefixProject(opt:Options, host: Host): Promise<string> {
     //   changedFiles.forEach((file, fileName) => allChangedFiles.set(fileName, file));
     // }
 
-    if (!excessChanges.size) {
+    if (excessChanges.size === 0) {
       break;
+    } else {
+      host.log(excessChanges.size + " changes remaining")
     }
   }
 
@@ -119,7 +121,7 @@ export async function getCodeFixesFromProject(project: Project, opt: Options, ho
   // pull all codefixes.
   const diagnosticsPerFile = await getDiagnostics(project);
 
-  if (diagnosticsPerFile === [] || diagnosticsPerFile === [[]]){
+  if (diagnosticsPerFile === [] || diagnosticsPerFile === [[]]){ // TODO fix equalty
     host.log("No more diagnostics.");
     return new Map<string, TextChange[]>();
   }
