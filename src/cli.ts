@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
-import yargs, { boolean, string } from 'yargs';
+import yargs from 'yargs';
 import path from "path";
 import { Options, codefixProject, CLIHost } from '.';
 

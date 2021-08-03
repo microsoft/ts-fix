@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`integration tests addOneUnknownToList 3 1`] = `
+{
+  "cwd": "cases/addOneUnknownToList",
+  "args": [
+    "-e",
+    "2352",
+    "--write"
+  ],
+  "logs": [
+    "Using TypeScript 4.3.5",
+    "No diagnostics found with code 2352",
+    "Found 0 codefixes"
+  ],
+  "filesWritten": {
+    "dataType": "Map",
+    "value": []
+  }
+}
+`;

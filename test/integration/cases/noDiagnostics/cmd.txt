@@ -1,1 +1,1 @@
-ts-fix --write
+ts-fix -e 4114 --write
