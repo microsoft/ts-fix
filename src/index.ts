@@ -121,7 +121,7 @@ export async function getCodeFixesFromProject(project: Project, opt: Options, ho
   // pull all codefixes.
   const diagnosticsPerFile = await getDiagnostics(project);
 
-  if (diagnosticsPerFile === [] || diagnosticsPerFile === [[]]){ // TODO fix equalty
+  if (diagnosticsPerFile.length===0){ // TODO fix equalty
     host.log("No more diagnostics.");
     return new Map<string, TextChange[]>();
   }

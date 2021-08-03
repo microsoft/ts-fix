@@ -21,11 +21,13 @@
   "author": "Isabel Duan",
   "devDependencies": {
     "@types/jest": "^26.0.24",
+    "@types/jest-specific-snapshot": "^0.5.5",
     "@types/lodash": "^4.14.171",
     "@types/yargs": "^15.0.13",
     "esbuild": "^0.12.15",
     "esbuild-jest": "^0.5.0",
-    "jest": "^27.0.6"
+    "jest": "^27.0.6",
+    "jest-specific-snapshot": "^5.0.0"
   },
   "dependencies": {
     "import-cwd": "^3.0.0",

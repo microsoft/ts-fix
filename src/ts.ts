@@ -78,8 +78,11 @@ export function createProject(options: CreateProjectOptions, changedFiles: Map<s
       if (!fs.existsSync(fileName)) {
         return undefined;
       }
-
-      return ts.ScriptSnapshot.fromString(fs.readFileSync(fileName).toString());
+      const fileContents = readFile(fileName);
+      if (fileContents === undefined){
+        return undefined
+      }
+      return ts.ScriptSnapshot.fromString(fileContents.toString());
     },
   };
 
