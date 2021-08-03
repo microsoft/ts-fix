@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 import { codefixProject} from "../../src";
 import { makeOptions } from "../../src/cli";
-import { normalizeSlashes, TestHost } from "./testHost";
-import {addSerializer, toMatchSpecificSnapshot} from "jest-specific-snapshot";
+import { normalizeSlashes, normalizeLineEndings, TestHost } from "./testHost";
+import {addSerializer} from "jest-specific-snapshot";
 
 async function baselineCLI(cwd: string, args: string[]) {
   const host = new TestHost(cwd);
@@ -29,13 +29,15 @@ addSerializer({
       if(value instanceof Map) {
         return {
           dataType: 'Map',
-          value: Array.from(value.entries()), // or with spread: value: [...value]
+          value: Array.from(value.entries()).map(([fileName,value])=>{
+            return [normalizeSlashes(fileName), normalizeLineEndings(value)]
+          }), 
         };
       } else {
         return value;
       }
     }
-    return JSON.stringify(snapshot, replacer,2);
+    return JSON.stringify(snapshot, replacer, 2);
   }
 })
 
