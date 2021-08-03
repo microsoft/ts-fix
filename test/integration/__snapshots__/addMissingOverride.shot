@@ -23,7 +23,7 @@ exports[`integration tests addMissingOverride 1 1`] = `
     "value": [
       [
         "index.ts",
-        "class Base {\\r\\n  m() {}\\r\\n}\\r\\n\\r\\nclass Derived extends Base {\\r\\n  override m() {}\\r\\n}\\r\\n\\r\\nclass MoreDerived extends Derived {\\r\\n  override m() {}\\r\\n}\\r\\n"
+        "class Base {\\n  m() {}\\n}\\n\\nclass Derived extends Base {\\n  override m() {}\\n}\\n\\nclass MoreDerived extends Derived {\\n  override m() {}\\n}\\n"
       ]
     ]
   }

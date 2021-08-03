@@ -23,7 +23,7 @@ exports[`integration tests addThreeUnknown 4 1`] = `
     "value": [
       [
         "index.ts",
-        "<string>[\\"words\\"];\\r\\n\\r\\n<object><unknown>\\"words\\";\\r\\n\\r\\n<string><unknown>0 * (4 + 3) / 100;"
+        "<string>[\\"words\\"];\\n\\n<object><unknown>\\"words\\";\\n\\n<string><unknown>0 * (4 + 3) / 100;"
       ]
     ]
   }

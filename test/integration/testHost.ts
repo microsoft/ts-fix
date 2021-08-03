@@ -3,10 +3,13 @@ import {PathLike} from "fs";
 import path from "path";
 import { Host } from "../../src";
 
-export function normalizeSlashes(path:string) : string{
+export function normalizeSlashes(path:string) : string {
     return  path.replace(/\\/g, '/');
 }
 
+export function normalizeLineEndings(contents:string) : string {
+    return contents.replace(/\r\n/g, '\n');
+}
 
 export class TestHost implements Host {
     private filesWritten = new Map<string, string>();

@@ -24,7 +24,7 @@ exports[`integration tests addMissingMember 0 1`] = `
     "value": [
       [
         "types.ts",
-        "interface I {\\r\\n  three: any;\\r\\n  two: any;\\r\\n  one: boolean;\\r\\n}"
+        "interface I {\\n  three: any;\\n  two: any;\\n  one: boolean;\\n}"
       ]
     ]
   }
