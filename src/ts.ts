@@ -66,7 +66,7 @@ export function createProject(options: CreateProjectOptions, changedFiles: Map<s
     getCompilationSettings: () => commandLine.options,
     getProjectReferences: () => commandLine.projectReferences,
     getCurrentDirectory: ts.sys.getCurrentDirectory,
-    getDefaultLibFileName: ts.getDefaultLibFileName,
+    getDefaultLibFileName: options => path.join(path.dirname(ts.sys.getExecutingFilePath()), ts.getDefaultLibFileName(options)),
     fileExists: ts.sys.fileExists,
     readFile: readFile,
     readDirectory: ts.sys.readDirectory,
