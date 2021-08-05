@@ -27,25 +27,25 @@ exports[`integration tests addMissingMember 0 1`] = `
           "cases/addMissingMember/types.ts",
           [
             {
+              "newText": "\\n  [x: string]: any;",
               "span": {
                 "start": 13,
                 "length": 0
-              },
-              "newText": "\\r\\n  [x: string]: any;"
+              }
             },
             {
+              "newText": "\\n  three: any;",
               "span": {
                 "start": 13,
                 "length": 0
-              },
-              "newText": "\\r\\n  three: any;"
+              }
             },
             {
+              "newText": "\\n  [x: string]: any;",
               "span": {
                 "start": 13,
                 "length": 0
-              },
-              "newText": "\\r\\n  [x: string]: any;"
+              }
             }
           ]
         ]
@@ -58,11 +58,11 @@ exports[`integration tests addMissingMember 0 1`] = `
           "cases/addMissingMember/types.ts",
           [
             {
+              "newText": "\\n  [x: string]: any;",
               "span": {
                 "start": 13,
                 "length": 0
-              },
-              "newText": "\\r\\n  [x: string]: any;"
+              }
             }
           ]
         ]

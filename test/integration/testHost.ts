@@ -3,13 +3,21 @@ import {PathLike} from "fs";
 import path from "path";
 import { Host } from "../../src";
 
-export function normalizeSlashes(path:string) : string {
+export function normalizeSlashes(path: string) : string {
     return  path.replace(/\\/g, '/');
 }
 
-export function normalizeLineEndings(contents:string) : string{
+export function normalizeLineEndings(contents: string) : string{
     return contents.replace(/\r\n/g, '\n');
+}
 
+export function normalizeTextChange(changes: TextChange[]) : TextChange[] {
+    return changes.map((c) => {
+        return {
+            newText: normalizeLineEndings(c.newText),
+            span: c.span
+        }
+    })
 }
 
 export class TestHost implements Host {
