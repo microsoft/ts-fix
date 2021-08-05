@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`integration tests twoFixNames 11 1`] = `
+exports[`integration tests twoFixNames 9 1`] = `
 {
   "cwd": "cases/twoFixNames",
   "args": [
@@ -11,18 +11,14 @@ exports[`integration tests twoFixNames 11 1`] = `
   ],
   "logs": [
     "Using TypeScript 4.3.5",
-    "Found 2056 diagnostics in 90 files",
+    "Found 6 diagnostics in 121 files",
     "Found 2 codefixes with name fixOverrideModifier",
-    "Found 2 codefixes with name addConvertToUnknownForNonOverlappingTypes",
-    "2 changes remaining",
-    "Overlapping changes detected. Performing additional pass...",
-    "Found 2052 diagnostics in 90 files",
-    "No codefixes found with name fixOverrideModifier",
-    "No codefixes found with name addConvertToUnknownForNonOverlappingTypes",
+    "Found 3 codefixes with name addConvertToUnknownForNonOverlappingTypes",
+    "no changes remaining",
     "Updated addoverrides.ts",
     "Updated addunknowns.ts"
   ],
-  "changes": [
+  "remainingChanges": [
     {
       "dataType": "Map",
       "value": [
@@ -35,10 +31,6 @@ exports[`integration tests twoFixNames 11 1`] = `
           []
         ]
       ]
-    },
-    {
-      "dataType": "Map",
-      "value": []
     }
   ],
   "filesWritten": {
@@ -50,7 +42,7 @@ exports[`integration tests twoFixNames 11 1`] = `
       ],
       [
         "addunknowns.ts",
-        "<string>[\\"words\\"];\\n\\n<object><unknown>\\"words\\";\\n\\n<string><unknown>0 * (4 + 3) / 100;"
+        "<string><unknown>[\\"words\\"];\\n\\n<object><unknown>\\"words\\";\\n\\n<string><unknown>0 * (4 + 3) / 100;"
       ]
     ]
   }

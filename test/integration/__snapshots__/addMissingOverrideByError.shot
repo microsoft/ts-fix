@@ -12,13 +12,10 @@ exports[`integration tests addMissingOverrideByError 2 1`] = `
     "Using TypeScript 4.3.5",
     "Found 2 diagnostics with code 4114",
     "Found 2 codefixes",
-    "1 changes remaining",
-    "Overlapping changes detected. Performing additional pass...",
-    "No diagnostics found with code 4114",
-    "Found 0 codefixes",
+    "no changes remaining",
     "Updated index.ts"
   ],
-  "changes": [
+  "remainingChanges": [
     {
       "dataType": "Map",
       "value": [
@@ -27,10 +24,6 @@ exports[`integration tests addMissingOverrideByError 2 1`] = `
           []
         ]
       ]
-    },
-    {
-      "dataType": "Map",
-      "value": []
     }
   ],
   "filesWritten": {

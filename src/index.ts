@@ -84,12 +84,14 @@ export async function codefixProject(opt:Options, host: Host): Promise<string> {
       allChangedFiles.set(fileName,change)
     });
     host.addRemainingChanges(excessChanges); 
-    
-    if (excessChanges.size === 0) {
+
+    if (hasOnlyEmptyLists(excessChanges)) {
+      host.log("no changes remaining")
       break;
     } else {
       host.log(excessChanges.size + " changes remaining")
     }
+    
   }
 
   if (opt.write) {
@@ -316,8 +318,6 @@ function getChangedFiles(project: Project, textChanges: Map<string, TextChange[]
   return { excessChanges, changedFiles };
 }
 
-
-
 function applyCodefixesInFile(originalContents: string, textChanges: TextChange[]):  [TextChange[], string] {
   // sort textchanges by start
   const sortedFixList = sortChangesByStart(textChanges);
@@ -383,7 +383,14 @@ export function doTextChangeOnString(currentFileText: string, change: TextChange
   return prefix + middle + suffix;
 }
 
-
+function hasOnlyEmptyLists(m : ReadonlyMap<any, readonly any[]>): boolean {
+  for (const [_,entries] of m.entries()) {
+    if (entries.length !== 0) {
+      return false;
+    }
+  }
+  return true;
+} 
 
 export function getFileName(filePath: string): string {
   return path.basename(filePath);
@@ -405,7 +412,6 @@ export function getOutputFilePath(filePath: string, opt: Options): string {
   const fileName = getRelativePath(filePath, opt);
   return path.resolve(opt.outputFolder, fileName);
 }
-
 
 function writeToFile(fileName: string, fileContents: string, opt: Options, host:Host): void {
   const writeToFileName = getOutputFilePath(fileName, opt);

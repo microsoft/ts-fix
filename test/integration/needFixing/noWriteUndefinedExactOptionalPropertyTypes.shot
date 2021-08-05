@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`integration tests noWriteUndefinedExactOptionalPropertyTypes 9 1`] = `
+exports[`integration tests noWriteUndefinedExactOptionalPropertyTypes 10 1`] = `
 {
   "cwd": "cases/noWriteUndefinedExactOptionalPropertyTypes",
   "args": [

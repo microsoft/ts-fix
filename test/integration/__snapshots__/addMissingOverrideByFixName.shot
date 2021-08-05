@@ -10,15 +10,12 @@ exports[`integration tests addMissingOverrideByFixName 3 1`] = `
   ],
   "logs": [
     "Using TypeScript 4.3.5",
-    "Found 2053 diagnostics in 89 files",
+    "Found 2 diagnostics in 120 files",
     "Found 2 codefixes with name fixOverrideModifier",
-    "1 changes remaining",
-    "Overlapping changes detected. Performing additional pass...",
-    "Found 2051 diagnostics in 89 files",
-    "No codefixes found with name fixOverrideModifier",
+    "no changes remaining",
     "Updated index.ts"
   ],
-  "changes": [
+  "remainingChanges": [
     {
       "dataType": "Map",
       "value": [
@@ -27,10 +24,6 @@ exports[`integration tests addMissingOverrideByFixName 3 1`] = `
           []
         ]
       ]
-    },
-    {
-      "dataType": "Map",
-      "value": []
     }
   ],
   "filesWritten": {

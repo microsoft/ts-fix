@@ -45,7 +45,7 @@ addSerializer({
     return JSON.stringify({ cwd: snapshot.cwd,
                              args: snapshot.args,
                              logs: snapshot.logs,
-                             changes: snapshot.changes,
+                             remainingChanges: snapshot.changes,
                              filesWritten: snapshot.filesWritten }, replacer, 2);
   }
 })

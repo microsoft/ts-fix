@@ -12,16 +12,18 @@ exports[`integration tests addOneUnknownToList 5 1`] = `
     "Using TypeScript 4.3.5",
     "Found 1 diagnostics with code 2352",
     "Found 1 codefixes",
-    "1 changes remaining",
-    "Overlapping changes detected. Performing additional pass...",
-    "No diagnostics found with code 2352",
-    "Found 0 codefixes",
+    "no changes remaining",
     "Updated index.ts"
   ],
-  "changes": [
+  "remainingChanges": [
     {
       "dataType": "Map",
-      "value": []
+      "value": [
+        [
+          "cases/addOneUnknownToList/index.ts",
+          []
+        ]
+      ]
     }
   ],
   "filesWritten": {

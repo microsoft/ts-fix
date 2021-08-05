@@ -19,7 +19,7 @@ exports[`integration tests addMissingMember 0 1`] = `
     "1 changes remaining",
     "Updated types.ts"
   ],
-  "changes": [
+  "remainingChanges": [
     {
       "dataType": "Map",
       "value": [
