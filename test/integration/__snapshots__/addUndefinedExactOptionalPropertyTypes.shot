@@ -1,16 +1,16 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`integration tests addOneUnknownToList 5 1`] = `
+exports[`integration tests addUndefinedExactOptionalPropertyTypes 7 1`] = `
 {
-  "cwd": "cases/addOneUnknownToList",
+  "cwd": "cases/addUndefinedExactOptionalPropertyTypes",
   "args": [
     "-e",
-    "2352",
+    "2375",
     "--write"
   ],
   "logs": [
     "Using TypeScript 4.3.5",
-    "No diagnostics found with code 2352",
+    "No diagnostics found with code 2375",
     "Found 0 codefixes"
   ],
   "changes": [

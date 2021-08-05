@@ -7,8 +7,9 @@ export function normalizeSlashes(path:string) : string {
     return  path.replace(/\\/g, '/');
 }
 
-export function normalizeLineEndings(contents:string) : string {
+export function normalizeLineEndings(contents:string) : string{
     return contents.replace(/\r\n/g, '\n');
+
 }
 
 export class TestHost implements Host {

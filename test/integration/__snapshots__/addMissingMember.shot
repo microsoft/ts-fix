@@ -19,6 +19,56 @@ exports[`integration tests addMissingMember 0 1`] = `
     "1 changes remaining",
     "Updated types.ts"
   ],
+  "changes": [
+    {
+      "dataType": "Map",
+      "value": [
+        [
+          "cases/addMissingMember/types.ts",
+          [
+            {
+              "span": {
+                "start": 13,
+                "length": 0
+              },
+              "newText": "\\r\\n  [x: string]: any;"
+            },
+            {
+              "span": {
+                "start": 13,
+                "length": 0
+              },
+              "newText": "\\r\\n  three: any;"
+            },
+            {
+              "span": {
+                "start": 13,
+                "length": 0
+              },
+              "newText": "\\r\\n  [x: string]: any;"
+            }
+          ]
+        ]
+      ]
+    },
+    {
+      "dataType": "Map",
+      "value": [
+        [
+          "cases/addMissingMember/types.ts",
+          [
+            {
+              "span": {
+                "start": 13,
+                "length": 0
+              },
+              "newText": "\\r\\n  [x: string]: any;"
+            }
+          ]
+        ]
+      ]
+    }
+  ],
   "filesWritten": {
     "dataType": "Map",
     "value": [

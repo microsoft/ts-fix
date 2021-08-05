@@ -11,9 +11,11 @@ async function baselineCLI(cwd: string, args: string[]) {
   await codefixProject(options, host);
   
   const snapshot = {
+    dirname: __dirname,
     cwd: normalizeSlashes(path.relative(__dirname, cwd)),
     args,
     logs: host.getLogs(),
+    changes: host.getRemainingChanges(),
     filesWritten: host.getFilesWritten(),
   };
   
@@ -21,23 +23,30 @@ async function baselineCLI(cwd: string, args: string[]) {
 }
 
 addSerializer({
-  test(snapshot: { cwd: any; args: any; logs: any; filesWritten: any; }){
-    return snapshot.cwd && snapshot.args && snapshot.logs && snapshot.filesWritten;
+  test(snapshot: { dirname: string, cwd: any; args: any; logs: any; changes: any; filesWritten: any; }){
+    return snapshot.cwd && snapshot.args && snapshot.logs && snapshot.changes && snapshot.filesWritten;
   },
-  print(snapshot: { cwd: any; args: any; logs: any; filesWritten: any; }){
+  print(snapshot: { dirname: string,  cwd: string; args: any; logs: any; changes: any; filesWritten: any; }){
     function replacer(_, value:any) {
-      if(value instanceof Map) {
+      if (value instanceof Map) {
         return {
           dataType: 'Map',
           value: Array.from(value.entries()).map(([fileName,value])=>{
-            return [normalizeSlashes(fileName), normalizeLineEndings(value)]
-          }), 
+            if (typeof value === "string"){
+              return [normalizeSlashes(fileName), normalizeLineEndings(value)] 
+            }
+            return [normalizeSlashes(path.relative(snapshot.dirname, fileName)), value] 
+            }), 
         };
       } else {
         return value;
       }
     }
-    return JSON.stringify(snapshot, replacer, 2);
+    return JSON.stringify({ cwd: snapshot.cwd,
+                             args: snapshot.args,
+                             logs: snapshot.logs,
+                             changes: snapshot.changes,
+                             filesWritten: snapshot.filesWritten }, replacer, 2);
   }
 })
 

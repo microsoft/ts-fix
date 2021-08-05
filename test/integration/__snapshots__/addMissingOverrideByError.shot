@@ -1,20 +1,20 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`integration tests addThreeUnknown 6 1`] = `
+exports[`integration tests addMissingOverrideByError 2 1`] = `
 {
-  "cwd": "cases/addThreeUnknown",
+  "cwd": "cases/addMissingOverrideByError",
   "args": [
     "-e",
-    "2352",
+    "4114",
     "--write"
   ],
   "logs": [
     "Using TypeScript 4.3.5",
-    "Found 2 diagnostics with code 2352",
+    "Found 2 diagnostics with code 4114",
     "Found 2 codefixes",
     "1 changes remaining",
     "Overlapping changes detected. Performing additional pass...",
-    "No diagnostics found with code 2352",
+    "No diagnostics found with code 4114",
     "Found 0 codefixes",
     "Updated index.ts"
   ],
@@ -23,7 +23,7 @@ exports[`integration tests addThreeUnknown 6 1`] = `
       "dataType": "Map",
       "value": [
         [
-          "cases/addThreeUnknown/index.ts",
+          "cases/addMissingOverrideByError/index.ts",
           []
         ]
       ]
@@ -38,7 +38,7 @@ exports[`integration tests addThreeUnknown 6 1`] = `
     "value": [
       [
         "index.ts",
-        "<string>[\\"words\\"];\\n\\n<object><unknown>\\"words\\";\\n\\n<string><unknown>0 * (4 + 3) / 100;"
+        "class Base {\\n  m() {}\\n}\\n\\nclass Derived extends Base {\\n  override m() {}\\n}\\n\\nclass MoreDerived extends Derived {\\n  override m() {}\\n}\\n"
       ]
     ]
   }

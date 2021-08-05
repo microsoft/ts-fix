@@ -1,31 +1,37 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`integration tests addMissingOverride 1 1`] = `
+exports[`integration tests twoFixNames 11 1`] = `
 {
-  "cwd": "cases/addMissingOverride",
+  "cwd": "cases/twoFixNames",
   "args": [
-    "-e",
-    "4114",
     "-f",
     "fixOverrideModifier",
+    "addConvertToUnknownForNonOverlappingTypes",
     "--write"
   ],
   "logs": [
     "Using TypeScript 4.3.5",
-    "Found 2 diagnostics with code 4114",
+    "Found 2056 diagnostics in 90 files",
     "Found 2 codefixes with name fixOverrideModifier",
-    "1 changes remaining",
+    "Found 2 codefixes with name addConvertToUnknownForNonOverlappingTypes",
+    "2 changes remaining",
     "Overlapping changes detected. Performing additional pass...",
-    "No diagnostics found with code 4114",
+    "Found 2052 diagnostics in 90 files",
     "No codefixes found with name fixOverrideModifier",
-    "Updated index.ts"
+    "No codefixes found with name addConvertToUnknownForNonOverlappingTypes",
+    "Updated addoverrides.ts",
+    "Updated addunknowns.ts"
   ],
   "changes": [
     {
       "dataType": "Map",
       "value": [
         [
-          "cases/addMissingOverride/index.ts",
+          "cases/twoFixNames/addoverrides.ts",
+          []
+        ],
+        [
+          "cases/twoFixNames/addunknowns.ts",
           []
         ]
       ]
@@ -39,8 +45,12 @@ exports[`integration tests addMissingOverride 1 1`] = `
     "dataType": "Map",
     "value": [
       [
-        "index.ts",
+        "addoverrides.ts",
         "class Base {\\n  m() {}\\n}\\n\\nclass Derived extends Base {\\n  override m() {}\\n}\\n\\nclass MoreDerived extends Derived {\\n  override m() {}\\n}\\n"
+      ],
+      [
+        "addunknowns.ts",
+        "<string>[\\"words\\"];\\n\\n<object><unknown>\\"words\\";\\n\\n<string><unknown>0 * (4 + 3) / 100;"
       ]
     ]
   }

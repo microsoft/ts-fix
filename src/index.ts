@@ -85,14 +85,6 @@ export async function codefixProject(opt:Options, host: Host): Promise<string> {
     });
     host.addRemainingChanges(excessChanges); 
     
-    // if (opt.write) {
-    //   // Edit each file if --write is true
-    //   host.writeFiles(opt);
-    // } else {
-    //   // Later passes incorporate changes from earlier passes, so overwriting is ok
-    //   changedFiles.forEach((file, fileName) => allChangedFiles.set(fileName, file));
-    // }
-
     if (excessChanges.size === 0) {
       break;
     } else {
@@ -105,7 +97,6 @@ export async function codefixProject(opt:Options, host: Host): Promise<string> {
       writeToFile(fileName, changedFile.newText, opt, host);
     })
   } else {
-    // TODO: report what files *would* have been changed 
     // -- do we really want it to possibly be printing hundereds of lines?
     host.log("Changes detected in the following files:");
     allChangedFiles.forEach((_, fileName) => {

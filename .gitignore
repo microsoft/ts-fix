@@ -2,3 +2,7 @@ dist
 node_modules
 exampleFolder
 presrc
+
+#The following test cases are not committed because the fix isn't in the TS version yet
+addUndefinedExactOptionalPropertyTypes
+noWriteUndefinedExactOptionalPropertyTypes

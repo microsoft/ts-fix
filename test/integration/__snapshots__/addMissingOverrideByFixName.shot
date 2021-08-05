@@ -1,22 +1,20 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`integration tests addMissingOverride 1 1`] = `
+exports[`integration tests addMissingOverrideByFixName 3 1`] = `
 {
-  "cwd": "cases/addMissingOverride",
+  "cwd": "cases/addMissingOverrideByFixName",
   "args": [
-    "-e",
-    "4114",
     "-f",
     "fixOverrideModifier",
     "--write"
   ],
   "logs": [
     "Using TypeScript 4.3.5",
-    "Found 2 diagnostics with code 4114",
+    "Found 2053 diagnostics in 89 files",
     "Found 2 codefixes with name fixOverrideModifier",
     "1 changes remaining",
     "Overlapping changes detected. Performing additional pass...",
-    "No diagnostics found with code 4114",
+    "Found 2051 diagnostics in 89 files",
     "No codefixes found with name fixOverrideModifier",
     "Updated index.ts"
   ],
@@ -25,7 +23,7 @@ exports[`integration tests addMissingOverride 1 1`] = `
       "dataType": "Map",
       "value": [
         [
-          "cases/addMissingOverride/index.ts",
+          "cases/addMissingOverrideByFixName/index.ts",
           []
         ]
       ]

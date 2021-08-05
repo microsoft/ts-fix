@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`integration tests addOneUnknown 2 1`] = `
+exports[`integration tests addOneUnknown 4 1`] = `
 {
   "cwd": "cases/addOneUnknown",
   "args": [
@@ -17,6 +17,21 @@ exports[`integration tests addOneUnknown 2 1`] = `
     "No diagnostics found with code 2352",
     "Found 0 codefixes",
     "Updated index.ts"
+  ],
+  "changes": [
+    {
+      "dataType": "Map",
+      "value": [
+        [
+          "cases/addOneUnknown/index.ts",
+          []
+        ]
+      ]
+    },
+    {
+      "dataType": "Map",
+      "value": []
+    }
   ],
   "filesWritten": {
     "dataType": "Map",
