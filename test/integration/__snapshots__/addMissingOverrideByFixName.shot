@@ -1,0 +1,39 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`integration tests addMissingOverrideByFixName 3 1`] = `
+{
+  "cwd": "cases/addMissingOverrideByFixName",
+  "args": [
+    "-f",
+    "fixOverrideModifier",
+    "--write"
+  ],
+  "logs": [
+    "Using TypeScript 4.3.5",
+    "Found 2 diagnostics in 120 files",
+    "Found 2 codefixes with name fixOverrideModifier",
+    "no changes remaining",
+    "Updated index.ts"
+  ],
+  "remainingChanges": [
+    {
+      "dataType": "Map",
+      "value": [
+        [
+          "cases/addMissingOverrideByFixName/index.ts",
+          []
+        ]
+      ]
+    }
+  ],
+  "filesWritten": {
+    "dataType": "Map",
+    "value": [
+      [
+        "index.ts",
+        "class Base {\\n  m() {}\\n}\\n\\nclass Derived extends Base {\\n  override m() {}\\n}\\n\\nclass MoreDerived extends Derived {\\n  override m() {}\\n}\\n"
+      ]
+    ]
+  }
+}
+`;

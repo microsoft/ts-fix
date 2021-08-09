@@ -1,0 +1,50 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`integration tests twoFixNames 9 1`] = `
+{
+  "cwd": "cases/twoFixNames",
+  "args": [
+    "-f",
+    "fixOverrideModifier",
+    "addConvertToUnknownForNonOverlappingTypes",
+    "--write"
+  ],
+  "logs": [
+    "Using TypeScript 4.3.5",
+    "Found 6 diagnostics in 121 files",
+    "Found 2 codefixes with name fixOverrideModifier",
+    "Found 3 codefixes with name addConvertToUnknownForNonOverlappingTypes",
+    "no changes remaining",
+    "Updated addoverrides.ts",
+    "Updated addunknowns.ts"
+  ],
+  "remainingChanges": [
+    {
+      "dataType": "Map",
+      "value": [
+        [
+          "cases/twoFixNames/addoverrides.ts",
+          []
+        ],
+        [
+          "cases/twoFixNames/addunknowns.ts",
+          []
+        ]
+      ]
+    }
+  ],
+  "filesWritten": {
+    "dataType": "Map",
+    "value": [
+      [
+        "addoverrides.ts",
+        "class Base {\\n  m() {}\\n}\\n\\nclass Derived extends Base {\\n  override m() {}\\n}\\n\\nclass MoreDerived extends Derived {\\n  override m() {}\\n}\\n"
+      ],
+      [
+        "addunknowns.ts",
+        "<string><unknown>[\\"words\\"];\\n\\n<object><unknown>\\"words\\";\\n\\n<string><unknown>0 * (4 + 3) / 100;"
+      ]
+    ]
+  }
+}
+`;

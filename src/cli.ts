@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
-import yargs, { boolean, string } from 'yargs';
+import yargs from 'yargs';
 import path from "path";
 import { Options, codefixProject, CLIHost } from '.';
 
@@ -73,38 +73,13 @@ export function makeOptions(cwd: string, args: string[]): Options {
     };
 }
 
-// const cliHost : Host =  {
-//     log: console.log.bind(console),
-//     writeFile: (fileName, content) => writeFileSync(fileName, content, 'utf8'),
-//     mkdir: (directoryPath) => mkdirSync(directoryPath, {recursive: true}),
-//     exists: existsSync, 
-//     remainingChanges: [] 
-// };
-
-
-// const silentHost: Host = {
-//     log: ()=>{},
-//     writeFile: (fileName, content) => writeFileSync(fileName, content, 'utf8'),
-//     mkdir: (directoryPath) => mkdirSync(directoryPath, {recursive: true}),
-//     exists: existsSync
-// }
-
-// runCli('--tsconfig ./blah/whatever/tsconfig.json --fixNames 23423', testHost);
-// logs: [ ... ]
-// changedFiles: [ ... ]
 if (!module.parent) {
     const opt = makeOptions(process.cwd(), process.argv.slice(2));
     let host = new CLIHost(process.cwd());
     (async() => { 
         const error = await codefixProject(opt, host);
         host.log(error);
-    }) ;
+    })();
         // error is a string if codefixProject did an error
 }
-
-//DONE: print out how many errors matched
-//DONE: fixes matched 
-//DONE: print out files changed
-
-// overlapping errors (matched changes that were not applied)
 

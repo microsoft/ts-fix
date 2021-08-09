@@ -1,0 +1,39 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`integration tests addThreeUnknown 6 1`] = `
+{
+  "cwd": "cases/addThreeUnknown",
+  "args": [
+    "-e",
+    "2352",
+    "--write"
+  ],
+  "logs": [
+    "Using TypeScript 4.3.5",
+    "Found 3 diagnostics with code 2352",
+    "Found 3 codefixes",
+    "no changes remaining",
+    "Updated index.ts"
+  ],
+  "remainingChanges": [
+    {
+      "dataType": "Map",
+      "value": [
+        [
+          "cases/addThreeUnknown/index.ts",
+          []
+        ]
+      ]
+    }
+  ],
+  "filesWritten": {
+    "dataType": "Map",
+    "value": [
+      [
+        "index.ts",
+        "<string><unknown>[\\"words\\"];\\n\\n<object><unknown>\\"words\\";\\n\\n<string><unknown>0 * (4 + 3) / 100;"
+      ]
+    ]
+  }
+}
+`;

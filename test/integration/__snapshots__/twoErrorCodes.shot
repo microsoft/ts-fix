@@ -1,0 +1,50 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`integration tests twoErrorCodes 8 1`] = `
+{
+  "cwd": "cases/twoErrorCodes",
+  "args": [
+    "-e",
+    "4114",
+    "2352",
+    "--write"
+  ],
+  "logs": [
+    "Using TypeScript 4.3.5",
+    "Found 2 diagnostics with code 4114",
+    "Found 3 diagnostics with code 2352",
+    "Found 5 codefixes",
+    "no changes remaining",
+    "Updated addoverrides.ts",
+    "Updated addunknowns.ts"
+  ],
+  "remainingChanges": [
+    {
+      "dataType": "Map",
+      "value": [
+        [
+          "cases/twoErrorCodes/addoverrides.ts",
+          []
+        ],
+        [
+          "cases/twoErrorCodes/addunknowns.ts",
+          []
+        ]
+      ]
+    }
+  ],
+  "filesWritten": {
+    "dataType": "Map",
+    "value": [
+      [
+        "addoverrides.ts",
+        "class Base {\\n  m() {}\\n}\\n\\nclass Derived extends Base {\\n  override m() {}\\n}\\n\\nclass MoreDerived extends Derived {\\n  override m() {}\\n}\\n"
+      ],
+      [
+        "addunknowns.ts",
+        "<string><unknown>[\\"words\\"];\\n\\n<object><unknown>\\"words\\";\\n\\n<string><unknown>0 * (4 + 3) / 100;"
+      ]
+    ]
+  }
+}
+`;

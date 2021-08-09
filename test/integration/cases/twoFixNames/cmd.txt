@@ -1,0 +1,1 @@
+ts-fix -f fixOverrideModifier addConvertToUnknownForNonOverlappingTypes --write

@@ -67,7 +67,7 @@ export async function codefixProject(opt:Options, host: Host): Promise<string> {
   const allChangedFiles = new Map<string, ChangedFile>();
   let passCount = -1;
   while (++passCount < 2)  {
-    const project = createProject({ tsConfigFilePath: opt.tsconfig });
+    const project = createProject({ tsConfigFilePath: opt.tsconfig }, allChangedFiles);
     if (!project) {
        return "Error: Could not create project.";
     }
@@ -84,18 +84,14 @@ export async function codefixProject(opt:Options, host: Host): Promise<string> {
       allChangedFiles.set(fileName,change)
     });
     host.addRemainingChanges(excessChanges); 
-    
-    // if (opt.write) {
-    //   // Edit each file if --write is true
-    //   host.writeFiles(opt);
-    // } else {
-    //   // Later passes incorporate changes from earlier passes, so overwriting is ok
-    //   changedFiles.forEach((file, fileName) => allChangedFiles.set(fileName, file));
-    // }
 
-    if (!excessChanges.size) {
+    if (hasOnlyEmptyLists(excessChanges)) {
+      host.log("no changes remaining")
       break;
+    } else {
+      host.log(excessChanges.size + " changes remaining")
     }
+    
   }
 
   if (opt.write) {
@@ -103,7 +99,6 @@ export async function codefixProject(opt:Options, host: Host): Promise<string> {
       writeToFile(fileName, changedFile.newText, opt, host);
     })
   } else {
-    // TODO: report what files *would* have been changed 
     // -- do we really want it to possibly be printing hundereds of lines?
     host.log("Changes detected in the following files:");
     allChangedFiles.forEach((_, fileName) => {
@@ -119,7 +114,7 @@ export async function getCodeFixesFromProject(project: Project, opt: Options, ho
   // pull all codefixes.
   const diagnosticsPerFile = await getDiagnostics(project);
 
-  if (diagnosticsPerFile === [] || diagnosticsPerFile === [[]]){
+  if (diagnosticsPerFile.length===0){ // TODO fix equalty
     host.log("No more diagnostics.");
     return new Map<string, TextChange[]>();
   }
@@ -323,8 +318,6 @@ function getChangedFiles(project: Project, textChanges: Map<string, TextChange[]
   return { excessChanges, changedFiles };
 }
 
-
-
 function applyCodefixesInFile(originalContents: string, textChanges: TextChange[]):  [TextChange[], string] {
   // sort textchanges by start
   const sortedFixList = sortChangesByStart(textChanges);
@@ -390,7 +383,14 @@ export function doTextChangeOnString(currentFileText: string, change: TextChange
   return prefix + middle + suffix;
 }
 
-
+function hasOnlyEmptyLists(m : ReadonlyMap<any, readonly any[]>): boolean {
+  for (const [_,entries] of m.entries()) {
+    if (entries.length !== 0) {
+      return false;
+    }
+  }
+  return true;
+} 
 
 export function getFileName(filePath: string): string {
   return path.basename(filePath);
@@ -412,7 +412,6 @@ export function getOutputFilePath(filePath: string, opt: Options): string {
   const fileName = getRelativePath(filePath, opt);
   return path.resolve(opt.outputFolder, fileName);
 }
-
 
 function writeToFile(fileName: string, fileContents: string, opt: Options, host:Host): void {
   const writeToFileName = getOutputFilePath(fileName, opt);

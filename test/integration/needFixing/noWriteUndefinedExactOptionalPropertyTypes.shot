@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`integration tests noWriteUndefinedExactOptionalPropertyTypes 10 1`] = `
+{
+  "cwd": "cases/noWriteUndefinedExactOptionalPropertyTypes",
+  "args": [
+    "-e",
+    "2375",
+    ""
+  ],
+  "logs": [
+    "Using TypeScript 4.3.5",
+    "No diagnostics found with code 2375",
+    "No diagnostics found with code 0",
+    "Found 0 codefixes",
+    "Changes detected in the following files:"
+  ],
+  "changes": [
+    {
+      "dataType": "Map",
+      "value": []
+    }
+  ],
+  "filesWritten": {
+    "dataType": "Map",
+    "value": []
+  }
+}
+`;

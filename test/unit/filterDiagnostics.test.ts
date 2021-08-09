@@ -1,6 +1,5 @@
-import { Options, filterDiagnosticsByErrorCode } from "../../src/index";
-import { CodeFixAction, Diagnostic, SourceFile } from "typescript";
-import {makeOptions} from "../../src/cli";
+import { filterDiagnosticsByErrorCode } from "../../src/index";
+import { Diagnostic } from "typescript";
 
 const default_codes = [];
 
