@@ -14,11 +14,11 @@ export function makeOptions(cwd: string, args: string[]): Options {
         verbose,
         write,
     } = yargs(args)
-            .scriptName("codefix")
-            .usage("$0 -t tsconfig.json -o /output -e err#")
+            .scriptName("ts-fix")
+            .usage("$0 -t path/to/tsconfig.json -f nameOfCodefix")
             .option("tsconfig", {
                 alias: "t",
-                description: "name or path to project's tsconfig",
+                description: "Path to project's tsconfig",
                 type: "string",
                 nargs: 1,
                 default: "./tsconfig.json",
@@ -32,31 +32,31 @@ export function makeOptions(cwd: string, args: string[]): Options {
             // })
             .option("errorCode", {
                 alias: "e",
-                describe: "the error code (number)",
+                describe: "The error code(s)",
                 type: "number",
                 array: true,
                 default: [],
             })
             .option("fixName", {
                 alias: "f",
-                describe: "names of codefixes to apply",
+                describe: "The name(s) of codefixe(s) to apply",
                 type: "string",
                 array: true, 
                 default: []
             }) 
            .option("write", {
                alias: "w", 
-               describe: "Default: False. Will only emit or overwrite files if --write is set to True.",
+               describe: "Tool will only emit or overwrite files if --write is included.",
                type:"boolean", 
                default: false,
            })
            .option("outputFolder", {
                 alias: "o", 
-                describe: "the output directory",
+                describe: "Path of output directory",
                 type: "string"
             })
             .option("verbose", {
-                describe: "Default: True. Writes status to console during runtime",
+                describe: "Write status to console during runtime",
                 type: "boolean",
                 default: true,
             })
