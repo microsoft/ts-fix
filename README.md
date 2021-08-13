@@ -1,6 +1,6 @@
 
 This tool is to automate the application of TypeScript codefixes across your TypeScript repositories. 
-ts-fix -t path/to/tsconfig.json -f nameOfCodefix
+
 
 # Download
 If cloning from GitHub, after cloning, run
@@ -12,6 +12,7 @@ npm link
 
 
 # Example Usage
+`ts-fix -t path/to/tsconfig.json -f nameOfCodefix`
 `ts-fix -e 4114 --write`
 
 
