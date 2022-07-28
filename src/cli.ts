@@ -13,6 +13,8 @@ export function makeOptions(cwd: string, args: string[]): Options {
         fixName,
         verbose,
         write,
+        fix,
+        interactiveMode
     } = yargs(args)
             .scriptName("ts-fix")
             .usage("$0 -t path/to/tsconfig.json -f nameOfCodefix")
@@ -27,7 +29,7 @@ export function makeOptions(cwd: string, args: string[]): Options {
                 }
             })
             // .option("file", {
-            //     description: "files to codefix. Not implemented yet.",
+            //     description: "files to codefix. Not implemented yet.", //TODOFIX
             //     type: "string"
             // })
             .option("errorCode", {
@@ -35,7 +37,7 @@ export function makeOptions(cwd: string, args: string[]): Options {
                 describe: "The error code(s)",
                 type: "number",
                 array: true,
-                default: [],
+                default: []
             })
             .option("fixName", {
                 alias: "f",
@@ -48,7 +50,7 @@ export function makeOptions(cwd: string, args: string[]): Options {
                alias: "w", 
                describe: "Tool will only emit or overwrite files if --write is included.",
                type:"boolean", 
-               default: false,
+               default: false
            })
            .option("outputFolder", {
                 alias: "o", 
@@ -58,18 +60,32 @@ export function makeOptions(cwd: string, args: string[]): Options {
             .option("verbose", {
                 describe: "Write status to console during runtime",
                 type: "boolean",
-                default: true,
+                default: true
+            })
+            .option("fix",{
+                describe: "Tool will only automatically attempts to fix all issues that do not require human interaction if --fix is included",
+                type: "boolean",
+                default: false
+            })
+            .option("interactiveMode",{ //TODOFIX
+                alias: "im",
+                describe: "Creates patch file allowing the user to decide which fix to apply",
+                type: "boolean",
+                default: false
             })
             .argv;
-    
+
     return {
         cwd,
         tsconfig,
         errorCode,
         fixName,
         write,
-        verbose, // TODO, not sure if this does anything after redoing CLIHost
-        outputFolder: outputFolder ? path.resolve(cwd, outputFolder) : path.dirname(tsconfig)
+        verbose, // TODO, not sure if this does anything after redoing CLIHost TODOFIX
+        outputFolder: 
+         outputFolder ? path.resolve(cwd, outputFolder) : path.dirname(tsconfig),
+        fix,
+        interactiveMode
     };
 }
 
