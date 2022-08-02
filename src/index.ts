@@ -1,9 +1,9 @@
 import path from "path";
-import type { CodeFixAction, Diagnostic, FileTextChanges, TextChange } from "typescript";
+import { CodeFixAction, Diagnostic, FileTextChanges, formatDiagnosticsWithColorAndContext, TextChange } from "typescript";
 import os from "os";
-import _ from "lodash";
+import _, { flatMap } from "lodash";
 import { createProject, Project } from "./ts";
-import { PathLike, writeFileSync, mkdirSync, existsSync } from "fs";
+import * as fs from "fs";
 import { diffChars } from "diff";
 import inquirer from 'inquirer';
 
@@ -21,6 +21,7 @@ export interface Host {
 
   // Returns all text changes that were not applied
   getRemainingChanges: () => (ReadonlyMap<string, readonly TextChange[]>)[];
+  getNewLine(): string;
 
   // Adds map of text changes that were not applied
   addRemainingChanges: (changelist: ReadonlyMap<string, readonly TextChange[]>) => void;
@@ -28,14 +29,36 @@ export interface Host {
   write: Logger;
   mkdir: typeof import("fs").mkdirSync;
   exists: typeof import("fs").existsSync;
+  getCurrentDirectory(): string;
+  getCanonicalFileName(fileName: string): string;
+}
+
+export function identity<T>(x: T) {
+  return x;
+}
+
+export function toLowerCase(x: string) {
+  return x.toLowerCase();
+}
+
+const fileNameLowerCaseRegExp = /[^\u0130\u0131\u00DFa-z0-9\\/:\-_\. ]+/g;
+export function toFileNameLowerCase(x: string) {
+  return fileNameLowerCaseRegExp.test(x) ?
+    x.replace(fileNameLowerCaseRegExp, toLowerCase) :
+    x;
+}
+export type GetCanonicalFileName = (fileName: string) => string;
+export function createGetCanonicalFileName(useCaseSensitiveFileNames: boolean): GetCanonicalFileName {
+  return useCaseSensitiveFileNames ? identity : toFileNameLowerCase;
 }
 
 export class CLIHost implements Host {
+
   private remainingChanges: (ReadonlyMap<string, readonly TextChange[]>)[] = [];
 
   constructor(private cwd: string) { };
 
-  writeFile(fileName: string, content: string) { writeFileSync(fileName, content, 'utf8') };
+  writeFile(fileName: string, content: string) { fs.writeFileSync(fileName, content, 'utf8') };
 
   getRemainingChanges() { return this.remainingChanges };
 
@@ -45,9 +68,13 @@ export class CLIHost implements Host {
 
   write(s: string) { process.stdout.write(s) };
 
-  mkdir(directoryPath: PathLike) { return mkdirSync(directoryPath, { recursive: true }) };
+  mkdir(directoryPath: fs.PathLike) { return fs.mkdirSync(directoryPath, { recursive: true }) };
 
-  exists(fileName: PathLike) { return existsSync(fileName) };
+  exists(fileName: fs.PathLike) { return fs.existsSync(fileName) };
+
+  getNewLine() { return "\n" }
+  getCurrentDirectory() { return process.cwd() }
+  getCanonicalFileName(fileName: string) { return fileName.toLowerCase() }
 }
 
 export interface Options {
@@ -55,6 +82,8 @@ export interface Options {
   tsconfig: string;
   outputFolder: string;
   errorCode: number[];
+  // file: string;
+  file: string[];
   fixName: string[];
   write: boolean,
   verbose: boolean,
@@ -72,6 +101,24 @@ const isAdditionalPassRequired = (opt: Options, passCount: number): boolean => {
 }
 
 export async function codefixProject(opt: Options, host: Host): Promise<string> {
+
+  let validFiles = new Array<string>;
+  let invalidFiles = new Array<string>;
+  if (opt.file) {
+    opt.file.forEach((file) => {
+      file = path.join(path.dirname(opt.tsconfig), file)
+      if (fs.existsSync(file)) {
+        validFiles.push(file);
+      }
+      else {
+        invalidFiles.push(file);
+      }
+    });
+    if (validFiles.length === 0) {
+      throw new Error(`All provided files are invalid`);
+    }
+  }
+
   if (opt.errorCode.length === 0 && opt.fixName.length === 0) {
     host.log("Please be aware that not specifying either code fix names or error codes often results in unwanted changes.");
   }
@@ -85,13 +132,9 @@ export async function codefixProject(opt: Options, host: Host): Promise<string> 
       return "Error: Could not create project.";
     }
 
-    if (passCount === 0) {
-      host.log("Using TypeScript " + project.ts.version);
-    } else {
-      host.log("Initiating additional pass...");
-    }
+    if (passCount === 0) host.log("Using TypeScript " + project.ts.version);
 
-    const [textChangesByFile, pendingChangesByFile] = await getCodeFixesFromProject(project, opt, host);
+    const [textChangesByFile, pendingChangesByFile] = await getCodeFixesFromProject(project, opt, host, validFiles);
     const { changedFiles, excessChanges } = await getChangedFiles(project, textChangesByFile);
     changedFiles.forEach((change, fileName) => {
       allChangedFiles.set(fileName, change)
@@ -99,75 +142,88 @@ export async function codefixProject(opt: Options, host: Host): Promise<string> 
     host.addRemainingChanges(excessChanges);
 
     if (hasOnlyEmptyLists(excessChanges)) {
-      host.log("No changes remaining for ts-fix");
+      host.log("No changes remaining for ts-fix. Printing summary... \n");
       if (pendingChangesByFile.size) {
-        host.log("The following files still have pending changes: ");
+        host.log("There are some pending changes. This usually means you'll need to install missing dependencies. See below:");
         pendingChangesByFile.forEach((change, fileName) => {
           host.log(`${change} ${fileName}`);
         })
       }
       break;
     } else {
-      host.log(excessChanges.size + " changes remaining\n");
-      if (excessChanges.size === 9) {
-        break;
-      }
+      host.log(excessChanges.size + " changes remaining. Initiating additional pass...\n");
     }
 
     passCount++;
   }
 
   if (opt.write) {
-    host.log("Changes detected in the following files:");
+    if (allChangedFiles.size === 0) host.log("No changes made in any files")
+    if (allChangedFiles.size === 1) host.log("Changes were made in the following file:")
+    else if (allChangedFiles.size > 1) {
+      host.log("Changes were made in the following files:");
+    }
     allChangedFiles.forEach((changedFile, fileName) => {
       writeToFile(fileName, changedFile.newText, opt, host);
-      host.log("   " + fileName);
     })
   }
 
   return "Done";
 }
 
-export async function getCodeFixesFromProject(project: Project, opt: Options, host: Host): Promise<[Map<string, TextChange[]>, Map<string, TextChange[]>]> {
+export async function getCodeFixesFromProject(project: Project, opt: Options, host: Host, validFiles: string[]): Promise<[Map<string, TextChange[]>, Map<string, TextChange[]>]> {
 
   // pull all codefixes.
   const diagnosticsPerFile = await getDiagnostics(project);
 
-  if (diagnosticsPerFile.length === 0) { // TODO fix equalty
+  if (diagnosticsPerFile.length === 0) {
     host.log("No more diagnostics.");
-    return [new Map<string, TextChange[]>(), new Map<string, TextChange[]>()];
+    return [new Map<string, TextChange[]>(), new Map<string, TextChange[]>]
   }
-  // pull codefixes from diagnostics.  If errorCode is specified, only pull fixes for that/those errors. 
-  //    Otherwise, pull all fixes
 
-  const [filteredDiagnostics, acceptedDiagnosticsOut] = filterDiagnosticsByErrorCode(diagnosticsPerFile, opt.errorCode);
+  // pull codefixes from diagnostics.  If errorCode is specified, only pull fixes for that/those errors. If file is specified, only pull fixes for that/those files.
+  //    Otherwise, pull all fixes
+  let [filteredDiagnostics, acceptedDiagnosticsOut] = filterDiagnosticsByErrorCode(diagnosticsPerFile, opt.errorCode, validFiles);
+
   acceptedDiagnosticsOut.forEach((string_describe: unknown) => {
     host.log(string_describe);
   });
 
-  const codefixesPerFile = filteredDiagnostics.map(function (d: readonly Diagnostic[]) {
-    const codefixes = (getCodeFixesForFile(project, d))
-    return codefixes;
-  });
-
-  const flatCodefixes = <CodeFixAction[]>_.flatten(codefixesPerFile);
-  let codefixes = flatCodefixes.filter((codefix) => codefix.changes.length > 0);
-  // && codefix.fixName !== "fixMissingMember"); TODOFIX I probably wont need this once 49993 it's fixed
-  let updatedCodefixes = new Array<CodeFixAction>();
-  const pendingFiles = flatCodefixes.filter((codefix) => codefix.changes.length === 0);
+  let codefixesPerFile;
+  let codefixes: readonly CodeFixAction[] = [];
+  let fixesAndDiagnostics: FixAndDiagnostic[] = [];
+  let updatedCodeFixes: CodeFixAction[] = [];
+  let noChangesFixes: CodeFixAction[] = [];
 
   if (opt.interactiveMode) {
-    for (let i = 0; i < codefixes.length; i++) {
-      let accepted = await getFileFixes(project, host, codefixes[i]);
+    codefixesPerFile = filteredDiagnostics.map(function (d: readonly Diagnostic[]) {
+      const fixesAndDiagnostics = (getCodeFixesForFileInteractive(project, d))
+      return fixesAndDiagnostics;
+    });
+    const flatCodeFixesAndDiagnostics = <FixAndDiagnostic[]>_.flatten(codefixesPerFile);
+    fixesAndDiagnostics = flatCodeFixesAndDiagnostics.filter((fixAndDiagnostic) => fixAndDiagnostic.fix.changes.length > 0);
+     // && codefix.fixName !== "fixMissingMember"); TODOFIX I probably wont need this once 49993 it's fixed
+    noChangesFixes = flatCodeFixesAndDiagnostics.filter((fixAndDiagnostic) => fixAndDiagnostic.fix.changes.length === 0).map((fixAndDiagnostic) => { return fixAndDiagnostic.fix });
+    for (let i = 0; i < fixesAndDiagnostics.length; i++) {
+      let accepted = await getFileFixes(project, host, fixesAndDiagnostics[i]);
       if (accepted) {
-        updatedCodefixes.push(codefixes[i])
+        updatedCodeFixes.push(fixesAndDiagnostics[i].fix);
       }
     }
   }
+  else {
+    codefixesPerFile = filteredDiagnostics.map(function (d: readonly Diagnostic[]) {
+      const codefixes = (getCodeFixesForFile(project, d))
+      return codefixes;
+    });
+    const flatCodeFixes = <CodeFixAction[]>_.flatten(codefixesPerFile);
+    codefixes = flatCodeFixes.filter((codefix) => codefix.changes.length > 0);
+    noChangesFixes = flatCodeFixes.filter((codefix) => codefix.changes.length === 0);
+  }
 
   // filter for codefixes if applicable, then organize textChanges by what file they alter
-  const [textChangesByFile, filterCodefixOut] = opt.interactiveMode ? getTextChangeDict(opt, updatedCodefixes, codefixes.length) : getTextChangeDict(opt, codefixes);
-  const [pendingChangesByFile, filterCodefixOut1] = getTextChangeDict(opt, pendingFiles); //TODOFIX use this for summary
+  const [textChangesByFile, filterCodefixOut] = opt.interactiveMode ? getTextChangeDict(opt, updatedCodeFixes, fixesAndDiagnostics.length) : getTextChangeDict(opt, codefixes);
+  const [pendingChangesByFile, filterCodefixOut1] = getTextChangeDict(opt, noChangesFixes); //TODOFIX use this for summary
 
   filterCodefixOut.forEach((s: unknown) => {
     host.log(s);
@@ -183,7 +239,7 @@ export function getDiagnostics(project: Project): (readonly Diagnostic[])[] {
   return diagnostics;
 }
 
-export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[])[], errorCodes: number[]): [(readonly Diagnostic[])[], string[]] {
+export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[])[], errorCodes: number[], validFiles?: string[]): [(readonly Diagnostic[])[], string[]] {
   // if errorCodes were passed in, only use the specified errors
   // diagnostics is guarenteed to not be [] or [[]]
   if (errorCodes.length !== 0) {
@@ -210,6 +266,7 @@ export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[]
         filteredDiagnostics.push(filteredDiagnostic);
       }
     }
+
     let returnStrings = <string[]>[];
     errorCodes.forEach((code: number) => {
       const count = errorCounter.get(code);
@@ -222,16 +279,47 @@ export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[]
 
     return [filteredDiagnostics, returnStrings];
   }
+  else if (validFiles) {
+    let length = 0;
+    const filteredDiagnostics = diagnostics.filter((diagnostics) => diagnostics.length > 0);
+    let returnDiagnostics = new Array<Diagnostic[]>;
+
+    for (let i = 0; i < filteredDiagnostics.length; i++) {
+      let index = 0;
+      returnDiagnostics[i] = new Array<Diagnostic>;
+      filteredDiagnostics[i].filter((diagnostic) => { //TODOFIX each array belongs to a file so this can be improved
+        if (diagnostic.file) {
+          if (validFiles.indexOf(path.normalize(diagnostic.file?.fileName)) != -1) {
+            returnDiagnostics[i][index] = diagnostic;
+            index++;
+            length++;
+          }
+        }
+      });
+    }
+    returnDiagnostics = returnDiagnostics.filter((diagnostics) => diagnostics.length > 0);
+
+    let returnStrings = <string[]>[];
+    if (length === 0) returnStrings.push(`No diagnostics founds for files`);
+    else returnStrings.push(`Found ${length} diagnostics for given files`);
+
+    return [returnDiagnostics, returnStrings]
+  }
   // otherwise, use all errors
   return [diagnostics, ["Found " + _.reduce(diagnostics.map((d: { length: any; }) => d.length), function (sum, n) {
     return sum + n;
   }, 0) + " diagnostics in " + diagnostics.length + " files"]];
 }
 
-export function getCodeFixesForFile(project: Project, diagnostics: readonly Diagnostic[]): readonly CodeFixAction[] {
+interface FixAndDiagnostic {
+  fix: CodeFixAction;
+  diagnostic: Diagnostic;
+}
+
+export function getCodeFixesForFile(project: Project, diagnostics: readonly Diagnostic[]): CodeFixAction[] {
   // expects already filtered diagnostics
   const service = project.languageService;
-  const codefixes = (<CodeFixAction[]>[]).concat.apply([], diagnostics.map(function (d: Diagnostic) {
+  return flatMap(diagnostics, d => {
     if (d.file && d.start !== undefined && d.length !== undefined) {
       return service.getCodeFixesAtPosition(
         d.file.fileName,
@@ -239,12 +327,33 @@ export function getCodeFixesForFile(project: Project, diagnostics: readonly Diag
         d.start + d.length,
         [d.code],
         project.ts.getDefaultFormatCodeSettings(os.EOL),
-        {});
+        {}).map((fix) => {
+          return fix;
+        });
     } else {
       return [];
     }
-  })).filter((d: CodeFixAction) => d !== undefined);
-  return codefixes;
+  })
+}
+
+export function getCodeFixesForFileInteractive(project: Project, diagnostics: readonly Diagnostic[]): FixAndDiagnostic[] {
+  // expects already filtered diagnostics
+  const service = project.languageService;
+  return flatMap(diagnostics, d => {
+    if (d.file && d.start !== undefined && d.length !== undefined) {
+      return service.getCodeFixesAtPosition(
+        d.file.fileName,
+        d.start,
+        d.start + d.length,
+        [d.code],
+        project.ts.getDefaultFormatCodeSettings(os.EOL),
+        {}).map((fix) => {
+          return { fix, diagnostic: d };
+        });
+    } else {
+      return [];
+    }
+  })
 }
 
 function getFileTextChangesFromCodeFix(codefix: CodeFixAction): readonly FileTextChanges[] {
@@ -279,36 +388,44 @@ export function getTextChangeDict(opt: Options, codefixes: readonly CodeFixActio
   return [textChangeDict, out];
 }
 
-export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], fixNames: string[], length?: number): [readonly CodeFixAction[], string[]] {
+export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], fixNames: string[], originalLength?: number): [readonly CodeFixAction[], string[]] {
   if (fixNames.length === 0) {
     // empty argument behavior... currently, we just keep all fixes if none are specified
     let returnStrings = <string[]>[];
     let codeFixes = new Set<string>();
     let fixesNames = new Array<string>();
     let fixesString = <string[]>[];
-    length ? fixesString.push(`Found ${length} codefixes but only ${codefixes.length} were accepted by the user`) : fixesString.push(`Found ${codefixes.length} codefixes`);
-    codefixes.forEach((codeFix: CodeFixAction) => {
-      if (codeFix.fixName !== undefined && !codeFixes.has(codeFix.fixName)) {
-        codeFixes.add(codeFix.fixName);
-        fixesNames.push(codeFix.fixName);
-      }
-    })
-    const fixesLength = fixesNames.length
-    if (fixesLength === 1) {
-      fixesString.push(`. Fix ${fixesNames[0]} was found`);
+    const appliedFixesLength = codefixes.length;
+    if (originalLength) {
+      if (appliedFixesLength === 0) { fixesString.push(`Found ${originalLength} codefixes but none were accepted by the user`) }
+      else if (appliedFixesLength === 1) { fixesString.push(`Found ${originalLength} codefixes but only 1 was accepted by the user`) }
+      else { fixesString.push(`Found ${originalLength} codefixes but only ${appliedFixesLength} were accepted by the user`) }
     }
-    if (fixesLength >= 2) {
-      fixesString.push(`. The codefixes found are: `);
-      for (let i = 0; i < fixesLength; i++) {
-        fixesString.push(fixesNames[i]);
-        if (i !== fixesLength - 1) {
-          fixesString.push(`, `);
+    if (!originalLength) {
+      fixesString.push(`Found ${codefixes.length} codefixes`)
+      codefixes.forEach((codeFix: CodeFixAction) => {
+        if (codeFix.fixName !== undefined && !codeFixes.has(codeFix.fixName)) {
+          codeFixes.add(codeFix.fixName);
+          fixesNames.push(codeFix.fixName);
+        }
+      })
+      const fixesLength = fixesNames.length
+      if (fixesLength === 1) {
+        fixesString.push(`. Fix ${fixesNames[0]} was found`);
+      }
+      if (fixesLength >= 2) {
+        fixesString.push(`. The codefixes found are: `);
+        for (let i = 0; i < fixesLength; i++) {
+          fixesString.push(fixesNames[i]);
+          if (i !== fixesLength - 1) {
+            fixesString.push(`, `);
+          }
         }
       }
     }
     return [codefixes, [fixesString.join('')]];
   }
-  
+
   // cannot sort by fixId right now since fixId is a {}
   // do we want to distinguish the case when no codefixes are picked? (no hits)
 
@@ -351,30 +468,21 @@ export interface ChangedFile {
   newText: string;
 }
 
-async function getFileFixes(project: Project, host: Host, codefix: CodeFixAction): Promise<boolean> {
-  let accepted = true;
-  for (let i = 0; i < codefix.changes.length; i++) {
-    const fileName = codefix.changes[i].fileName
-    const sourceFile = project.program.getSourceFile(codefix.changes[i].fileName);
+async function getFileFixes(project: Project, host: Host, codefix: FixAndDiagnostic): Promise<boolean> {
+  for (let i = 0; i < codefix.fix.changes.length; i++) {
+    const fileName = codefix.fix.changes[i].fileName
+    const sourceFile = project.program.getSourceFile(fileName);
     if (sourceFile !== undefined) {
-      const originalContents = sourceFile.text;
-      const newFileContents = applyChangestoFile(originalContents, codefix.changes[i].textChanges);
-      for (let j = 0; j < codefix.changes[i].textChanges.length; j++) {
-        let start = codefix.changes[j].textChanges[0].span.start;
-        const currentFileContentSubstring = originalContents.substring(originalContents.lastIndexOf('\n', start) + 1, originalContents.indexOf('\n', start));
-        const newFileContentsSubstring = newFileContents.substring(newFileContents.lastIndexOf('\n', start) + 1, newFileContents.indexOf('\n', start));
-        const fileLine = originalContents.indexOf(originalContents);
-        host.log(`Please review this fix in file: ${fileName}`); //TODOFIX print file name and file line along with changed text, maybe even include fix being applied?
-        host.log(`The file line to be changed is: ${fileLine}`);
-        const diff = compareContentsAndLog(host, currentFileContentSubstring, newFileContentsSubstring);
-        const userDecision = await getInputFromUser();
+      for (let j = 0; j < codefix.fix.changes[i].textChanges.length; j++) {
+        host.log(formatDiagnosticsWithColorAndContext([codefix.diagnostic], host));
+        const userDecision = await getInputFromUser(codefix.fix.fixName);
         if (Choices.reject === userDecision) {
-          accepted = false
+          return false;
         }
       }
     }
   }
-  return accepted;
+  return true;
 }
 
 async function getChangedFiles(project: Project, textChanges: Map<string, TextChange[]>): Promise<{ changedFiles: ReadonlyMap<string, ChangedFile>; excessChanges: ReadonlyMap<string, readonly TextChange[]>; }> {
@@ -394,7 +502,7 @@ async function getChangedFiles(project: Project, textChanges: Map<string, TextCh
       changedFiles.set(fileName, { originalText: originalFileContents, newText: newFileContents });
     }
     else {
-      throw new Error('File ' + fileName + ' not found in project');
+      throw new Error(`File ${fileName} not found in project`);
     }
   };
 
@@ -447,13 +555,13 @@ enum Choices {
   reject = "Reject"
 }
 
-async function getInputFromUser(): Promise<string> {
+async function getInputFromUser(codefix: string): Promise<string> {
   const choice = await inquirer
     .prompt([
       {
         name: "choice",
         type: "list",
-        message: "What would you like to do?",
+        message: `Would you like to apply the ${codefix} fix?`,
         choices: [Choices.accept, Choices.reject]
       },
     ]);
@@ -480,7 +588,8 @@ export function doTextChanges(fileText: string, textChanges: readonly TextChange
 
 export function doTextChangeOnString(currentFileText: string, change: TextChange): string {
   const prefix = currentFileText.substring(0, change.span.start);
-  const middle = change.newText;
+  const middle = `\x1b[32m${change.newText}\x1b[0m`;
+  // const middle = change.newText;
   const suffix = currentFileText.substring(change.span.start + change.span.length);
   return prefix + middle + suffix;
 }
@@ -516,17 +625,19 @@ export function getOutputFilePath(filePath: string, opt: Options): string {
   return path.resolve(opt.outputFolder, fileName);
 }
 
-function compareContentsAndLog(host: Host, str1: string, str2: string): void {
+function compareContentsAndLog(host: Host, str1: string, str2: string): void {//TODOFIX might not need anymore once I fix the other function
   let diff = diffChars(str1, str2);
+  let stringDiff = "";
   diff.forEach((part) => {
     // green for additions, red for deletions
     // unset for common parts
-    let color; //TODOFIX look at function `formatCodeSpan`
+    let color;
     if (part.added) color = 32;
     if (part.removed) color = 31;
     (part.added || part.removed) ? host.write(`\x1b[${color}m${part.value}\x1b[0m`) : host.write(`${part.value}`);
   });
   host.write(`\n`);
+  host.write(stringDiff)
 }
 
 function writeToFile(fileName: string, fileContents: string, opt: Options, host: Host): string {
@@ -536,6 +647,6 @@ function writeToFile(fileName: string, fileContents: string, opt: Options, host:
     host.mkdir(writeToDirectory);
   }
   host.writeFile(writeToFileName, fileContents);
-  host.log("Updated " + path.relative(opt.cwd, writeToFileName)); //TODOFIX gotta change this message when editing files on an output folder
+  host.log("Updated " + path.relative(opt.cwd, writeToFileName));
   return writeToFileName;
 }

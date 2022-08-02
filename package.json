@@ -20,6 +20,8 @@
   "name": "ts-fix",
   "author": "Isabel Duan",
   "devDependencies": {
+    "@types/diff": "^5.0.2",
+    "@types/inquirer": "^8.2.1",
     "@types/jest": "^26.0.24",
     "@types/jest-specific-snapshot": "^0.5.5",
     "@types/lodash": "^4.14.171",
@@ -30,9 +32,11 @@
     "jest-specific-snapshot": "^5.0.0"
   },
   "dependencies": {
+    "diff": "^5.1.0",
     "import-cwd": "^3.0.0",
+    "inquirer": "^8.0.0",
     "lodash": "^4.17.21",
-    "typescript": "^4.3.5",
+    "typescript": "4.8.0-dev.20220731",
     "yargs": "^16.2.0"
   }
 }

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import yargs from 'yargs';
 import path from "path";
 import { Options, codefixProject, CLIHost } from '.';
@@ -14,65 +13,68 @@ export function makeOptions(cwd: string, args: string[]): Options {
         verbose,
         write,
         fix,
+        file,
         interactiveMode
     } = yargs(args)
-            .scriptName("ts-fix")
-            .usage("$0 -t path/to/tsconfig.json -f nameOfCodefix")
-            .option("tsconfig", {
-                alias: "t",
-                description: "Path to project's tsconfig",
-                type: "string",
-                nargs: 1,
-                default: "./tsconfig.json",
-                coerce: (arg: string) => {
-                    return path.resolve(cwd, arg);
-                }
-            })
-            // .option("file", {
-            //     description: "files to codefix. Not implemented yet.", //TODOFIX
-            //     type: "string"
-            // })
-            .option("errorCode", {
-                alias: "e",
-                describe: "The error code(s)",
-                type: "number",
-                array: true,
-                default: []
-            })
-            .option("fixName", {
-                alias: "f",
-                describe: "The name(s) of codefixe(s) to apply",
-                type: "string",
-                array: true, 
-                default: []
-            }) 
-           .option("write", {
-               alias: "w", 
-               describe: "Tool will only emit or overwrite files if --write is included.",
-               type:"boolean", 
-               default: false
-           })
-           .option("outputFolder", {
-                alias: "o", 
-                describe: "Path of output directory",
-                type: "string"
-            })
-            .option("verbose", {
-                describe: "Write status to console during runtime",
-                type: "boolean",
-                default: true
-            })
-            .option("fix",{
-                describe: "Tool will only automatically attempts to fix all issues that do not require human interaction if --fix is included",
-                type: "boolean",
-                default: false
-            })
-            .option("interactiveMode",{ //TODOFIX
-                alias: "im",
-                describe: "Creates patch file allowing the user to decide which fix to apply",
-                type: "boolean",
-                default: false
-            })
+        .scriptName("ts-fix")
+        .usage("$0 -t path/to/tsconfig.json -f nameOfCodefix")
+        .option("tsconfig", {
+            alias: "t",
+            description: "Path to project's tsconfig",
+            type: "string",
+            nargs: 1,
+            default: "./tsconfig.json",
+            coerce: (arg: string) => {
+                return path.resolve(cwd, arg);
+            }
+        })
+        .option("file", {
+            description: "Relative paths of file(s) in which to apply code fixes",
+            type: "string",
+            array: true,
+            default: []
+        })
+        .option("errorCode", {
+            alias: "e",
+            describe: "The error code(s)",
+            type: "number",
+            array: true,
+            default: []
+        })
+        .option("fixName", {
+            alias: "f",
+            describe: "The name(s) of codefixe(s) to apply",
+            type: "string",
+            array: true,
+            default: []
+        })
+        .option("write", {
+            alias: "w",
+            describe: "Tool will only emit or overwrite files if --write is included.",
+            type: "boolean",
+            default: false
+        })
+        .option("outputFolder", {
+            alias: "o",
+            describe: "Path of output directory",
+            type: "string"
+        })
+        .option("verbose", {
+            describe: "Write status to console during runtime",
+            type: "boolean",
+            default: true
+        })
+        .option("fix", {
+            describe: "Tool will only automatically attempts to fix all issues that do not require human interaction if --fix is included",
+            type: "boolean",
+            default: false
+        })
+        .option("interactiveMode", { //TODOFIX
+            alias: "im",
+            describe: "Creates patch file allowing the user to decide which fix to apply",
+            type: "boolean",
+            default: false
+        })
             .argv;
 
     return {
@@ -82,9 +84,9 @@ export function makeOptions(cwd: string, args: string[]): Options {
         fixName,
         write,
         verbose, // TODO, not sure if this does anything after redoing CLIHost TODOFIX
-        outputFolder: 
-         outputFolder ? path.resolve(cwd, outputFolder) : path.dirname(tsconfig),
+        outputFolder: outputFolder ? path.resolve(cwd, outputFolder) : path.dirname(tsconfig),
         fix,
+        file,
         interactiveMode
     };
 }
@@ -92,10 +94,10 @@ export function makeOptions(cwd: string, args: string[]): Options {
 if (!module.parent) {
     const opt = makeOptions(process.cwd(), process.argv.slice(2));
     let host = new CLIHost(process.cwd());
-    (async() => { 
+    (async () => {
         const error = await codefixProject(opt, host);
         host.log(error);
     })();
-        // error is a string if codefixProject did an error
+    // error is a string if codefixProject did an error
 }
 
