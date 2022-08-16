@@ -1,5 +1,4 @@
 import { doTextChangeOnString } from "../../src/index";
-// import path from "path";
 import { TextChange } from "typescript";
 
 test("textChangeOnString1", () => {

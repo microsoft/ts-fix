@@ -6,18 +6,64 @@ import { Options, codefixProject, CLIHost } from '.';
 
 export function makeOptions(cwd: string, args: string[]): Options {
     const {
-        tsconfig,
-        outputFolder,
         errorCode,
-        fixName,
-        verbose,
-        write,
-        fix,
         file,
-        interactiveMode
+        fix,
+        fixName,
+        ignoreGitStatus,
+        interactiveMode,
+        outputFolder,
+        showMultiple,
+        tsconfig,
+        write,
     } = yargs(args)
         .scriptName("ts-fix")
         .usage("$0 -t path/to/tsconfig.json -f nameOfCodefix")
+        .option("errorCode", {
+            alias: "e",
+            describe: "The error code(s)",
+            type: "number",
+            array: true,
+            default: []
+        })
+        .option("file", {
+            description: "Relative paths to the file(s) for which to find diagnostics",
+            type: "string",
+            array: true,
+            default: []
+        })
+        .option("fix", {
+            describe: "Tool will only automatically attempt to fix all issues that do not require human interaction if --fix is included. It requires the --write flag to modify the files",
+            type: "boolean",
+            default: false
+        })
+        .option("fixName", {
+            alias: "f",
+            describe: "The name(s) of codefixe(s) to apply",
+            type: "string",
+            array: true,
+            default: []
+        })
+        .option("ignoreGitStatus", {
+            describe: "Must use if the git status isn't clean, the write flag is being used, and the output folder is the same as the project folder",
+            type: "boolean",
+            default: false
+        })
+        .option("interactiveMode", {
+            describe: "Takes input from the user to decide which fixes to apply",
+            type: "boolean",
+            default: false
+        })
+        .option("outputFolder", {
+            alias: "o",
+            describe: "Path of output directory",
+            type: "string"
+        })
+        .option("showMultiple", {
+            describe: "Takes input from the user to decide which fix to apply when there are more than one quick fix for a diagnostic, if this flag is not provided the tool will apply the first fix found for the diagnostic",
+            type: "boolean",
+            default: false
+        })
         .option("tsconfig", {
             alias: "t",
             description: "Path to project's tsconfig",
@@ -28,66 +74,25 @@ export function makeOptions(cwd: string, args: string[]): Options {
                 return path.resolve(cwd, arg);
             }
         })
-        .option("file", {
-            description: "Relative paths of file(s) in which to apply code fixes",
-            type: "string",
-            array: true,
-            default: []
-        })
-        .option("errorCode", {
-            alias: "e",
-            describe: "The error code(s)",
-            type: "number",
-            array: true,
-            default: []
-        })
-        .option("fixName", {
-            alias: "f",
-            describe: "The name(s) of codefixe(s) to apply",
-            type: "string",
-            array: true,
-            default: []
-        })
         .option("write", {
             alias: "w",
             describe: "Tool will only emit or overwrite files if --write is included.",
             type: "boolean",
             default: false
         })
-        .option("outputFolder", {
-            alias: "o",
-            describe: "Path of output directory",
-            type: "string"
-        })
-        .option("verbose", {
-            describe: "Write status to console during runtime",
-            type: "boolean",
-            default: true
-        })
-        .option("fix", {
-            describe: "Tool will only automatically attempts to fix all issues that do not require human interaction if --fix is included",
-            type: "boolean",
-            default: false
-        })
-        .option("interactiveMode", { //TODOFIX
-            alias: "im",
-            describe: "Creates patch file allowing the user to decide which fix to apply",
-            type: "boolean",
-            default: false
-        })
-            .argv;
-
+        .argv;
     return {
         cwd,
-        tsconfig,
         errorCode,
-        fixName,
-        write,
-        verbose, // TODO, not sure if this does anything after redoing CLIHost TODOFIX
-        outputFolder: outputFolder ? path.resolve(cwd, outputFolder) : path.dirname(tsconfig),
-        fix,
         file,
-        interactiveMode
+        fix,
+        fixName,
+        ignoreGitStatus,
+        interactiveMode,
+        outputFolder : outputFolder ? path.resolve(cwd, outputFolder) : path.dirname(tsconfig),
+        showMultiple,
+        tsconfig,
+        write,
     };
 }
 

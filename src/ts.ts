@@ -1,4 +1,3 @@
-import fs from "fs";
 import path from "path";
 import importCwd from "import-cwd";
 import type { LanguageService, LanguageServiceHost, ParseConfigFileHost, Program } from "typescript";
