@@ -89,7 +89,6 @@ export interface Options {
   file: string[];
   fixName: string[];
   write: boolean,
-  fix: boolean,
   showMultiple: boolean,
   interactiveMode: boolean,
   ignoreGitStatus: boolean
@@ -309,7 +308,7 @@ export async function getCodeFixesFromProject(project: Project, opt: Options, ho
   }
   fixesAndDiagnostics = removeDuplicatedFixes(fixesAndDiagnostics);
 
-  host.log(`${fixesAndDiagnostics.length} will be applied. There are ${noAppliedFixes.length} no applied fixes`);
+  host.log(`Fixes to be applied: ${fixesAndDiagnostics.length}\nNo applied fixes: ${noAppliedFixes.length}`);
 
   if (opt.interactiveMode) {
     codefixes = await getFileFixes(project, host, fixesAndDiagnostics, opt.showMultiple);

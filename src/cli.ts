@@ -8,7 +8,6 @@ export function makeOptions(cwd: string, args: string[]): Options {
     const {
         errorCode,
         file,
-        fix,
         fixName,
         ignoreGitStatus,
         interactiveMode,
@@ -31,11 +30,6 @@ export function makeOptions(cwd: string, args: string[]): Options {
             type: "string",
             array: true,
             default: []
-        })
-        .option("fix", {
-            describe: "Tool will only automatically attempt to fix all issues that do not require human interaction if --fix is included. It requires the --write flag to modify the files",
-            type: "boolean",
-            default: false
         })
         .option("fixName", {
             alias: "f",
@@ -85,7 +79,6 @@ export function makeOptions(cwd: string, args: string[]): Options {
         cwd,
         errorCode,
         file,
-        fix,
         fixName,
         ignoreGitStatus,
         interactiveMode,
