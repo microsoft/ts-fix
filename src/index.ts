@@ -1,14 +1,13 @@
 import path from "path";
 import { CodeFixAction, Diagnostic, DiagnosticCategory, FileTextChanges, formatDiagnosticsWithColorAndContext, SourceFile, TextChange } from "typescript";
 import os from "os";
-import _, { flatMap, cloneDeep, isEqual } from "lodash";
+import _, { flatMap, cloneDeep, isEqual, includes, map } from "lodash";
 import { createProject, Project } from "./ts";
 import * as fs from "fs";
 import { diffChars } from "diff";
 import inquirer from "inquirer";
-import { formatDiagnosticsWithColorAndContextTsFix, formatFixOnADifferentLocation } from "./utilities";
+import { formatDiagnosticsWithColorAndContextTsFix, formatFixesInTheSameSpan, formatFixOnADifferentLocation } from "./utilities";
 import { exec } from 'child_process';
-import { option } from "yargs";
 
 export interface Logger {
   (...args: any[]): void;
@@ -99,8 +98,12 @@ export interface Options {
 const gitStatus = (dir: string) => new Promise<string>((resolve) => {
   const dirPath = path.dirname(dir);
   return exec(`git --git-dir="${dirPath + "\\.git"}" --work-tree="${dirPath}" status --porcelain`, (err, stdout) => {
-    if (err) throw new Error(err.message);
-    else if (typeof stdout === 'string') resolve(stdout.trim());
+    if (err) {
+      throw new Error(err.message);
+    }
+    else if (typeof stdout === 'string') {
+      resolve(stdout.trim());
+    }
   });
 });
 
@@ -143,31 +146,28 @@ const checkOptions = async (opt: Options): Promise<[string[], string[]]> => {
   return [validFiles, invalidFiles];
 }
 
-//TODOFIX - Keep this or remove?
-enum starterText {
-  'Give us a second to find your diagnostics' = 1,
-  'We are creating the project please be patient' = 2,
-  'Hold tight, we are finding your diagnostics' = 3,
-}
-
-function printSummary(host: Host, opt: Options, invalidFiles: string[], allChangedFiles: Map<string, ChangedFile>, pendingChangesByFile: Map<string, TextChange[]>): void {
-  if (invalidFiles.length || pendingChangesByFile.size || opt.write) host.log("Summary: ")
+function printSummary(host: Host, opt: Options, invalidFiles: string[], allChangedFiles: Map<string, ChangedFile>, noAppliedChangesByFile: Map<string, Set<string>>): void {
   if (invalidFiles.length) {
-    host.log("The following file paths are invalid:")
+    host.log("\nThe following file paths are invalid:")
     invalidFiles.forEach((file) => host.log(file));
   }
-  if (pendingChangesByFile.size) {
-    host.log("There are some pending changes. This usually means you'll need to install missing dependencies. See details below:");
-    pendingChangesByFile.forEach((change, fileName) => {
-      host.log(`${change} ${fileName}`);
+  if (noAppliedChangesByFile.size) {
+    host.log("\nThere are some pending changes. This usually means you'll need to install missing dependencies. See details below:");
+    noAppliedChangesByFile.forEach((fileNames, fix) => {
+      fileNames.forEach((fileName) => {
+        if (fileName && fix) {
+          host.log(`${fix} ${path.relative(opt.cwd, fileName)}`)
+        }
+      });
     })
   }
   if (opt.write) {
     const allChangedFilesSize = allChangedFiles.size;
-    if (allChangedFilesSize === 0) host.log("No changes made in any files")
-    if (allChangedFilesSize === 1) host.log("Changes were made in the following file:")
-    else if (allChangedFilesSize > 1) {
-      host.log("Changes were made in the following files:");
+    if (!allChangedFilesSize) {
+      host.log("\nNo changes made in any files");
+    }
+    else {
+      host.log("\nChanges were made in the following files:");
     }
     allChangedFiles.forEach((changedFile, fileName) => {
       writeToFile(fileName, changedFile.newText, opt, host);
@@ -175,28 +175,65 @@ function printSummary(host: Host, opt: Options, invalidFiles: string[], allChang
   }
 }
 
+function getAllNoAppliedChangesByFile(noAppliedFixes: CodeFixAction[]): Map<string, Set<string>> {
+  let allNoAppliedChangesByFile = new Map<string, Set<string>>;
+  noAppliedFixes.forEach((fix) => {
+    if (allNoAppliedChangesByFile.has(fix.fixName)) {
+      let newSet: Set<string> = new Set();
+      if (!fix.changes.length && fix.commands) {
+        newSet = allNoAppliedChangesByFile.get(fix.fixName)!;
+        newSet.add((fix.commands[0] as any).file);
+        allNoAppliedChangesByFile.set(fix.fixName, newSet);
+      }
+      else {
+        newSet = allNoAppliedChangesByFile.get(fix.fixName)!;
+        newSet.add((fix.changes[0] as any).file);
+        allNoAppliedChangesByFile.set(fix.fixName, newSet);
+      }
+    }
+    else {
+      let newSet: Set<string> = new Set();
+      if (!fix.changes.length && fix.commands) {
+        allNoAppliedChangesByFile.set(fix.fixName, newSet.add((fix.commands[0] as any).file));
+      }
+      else {
+        allNoAppliedChangesByFile.set(fix.fixName, newSet.add(fix.changes[0].fileName));
+      }
+    }
+  });
+  return allNoAppliedChangesByFile;
+}
+
 export async function codefixProject(opt: Options, host: Host): Promise<string> {
 
   const [validFiles, invalidFiles] = await checkOptions(opt);
 
   const allChangedFiles = new Map<string, ChangedFile>();
-  let allPendingChangesByFile = new Map<string, TextChange[]>; //TODOFIX - Use pendingChangesByFile in summary
+  let allNoAppliedChangesByFile = new Map<string, Set<string>>;
   let passCount = 0;
 
   while (true) {
 
-    if (passCount === 0) host.log("The project is being created...");
-    // if (passCount === 0) host.log(starterText[Math.ceil(Math.random() * (3 - 0) + 0)]);
+    if (passCount === 0) {
+      host.log("The project is being created... \n");
+    }
 
     const project = createProject({ tsConfigFilePath: opt.tsconfig }, allChangedFiles);
-    if (!project) return "Error: Could not create project.";
+    if (!project) {
+      return "Error: Could not create project.";
+    }
 
-    if (passCount === 0) host.log("Using TypeScript " + project.ts.version);
+    if (passCount === 0) {
+      host.log("Using TypeScript " + project.ts.version);
+    }
 
-    const [textChangesByFile, pendingChangesByFile] = await getCodeFixesFromProject(project, opt, host, validFiles);
+    const [textChangesByFile, noAppliedFixes] = await getCodeFixesFromProject(project, opt, host, validFiles);
+
+    allNoAppliedChangesByFile = getAllNoAppliedChangesByFile(noAppliedFixes);
+
     const { changedFiles, excessChanges } = await getChangedFiles(project, textChangesByFile);
     changedFiles.forEach((change, fileName) => {
-      allChangedFiles.set(fileName, change)
+      allChangedFiles.set(fileName, change);
     });
     host.addRemainingChanges(excessChanges);
 
@@ -204,94 +241,87 @@ export async function codefixProject(opt: Options, host: Host): Promise<string> 
       host.log("No changes remaining for ts-fix\n");
       break;
     } else {
-      host.log(excessChanges.size + " changes remaining. Initiating additional pass...\n"); //TODOFIX - Take a look at this, the count is a little misleading
+      host.log(excessChanges.size + " changes remaining. Initiating additional pass...\n");
     }
 
     passCount++;
   }
 
-  printSummary(host, opt, invalidFiles, allChangedFiles, allPendingChangesByFile);
+  printSummary(host, opt, invalidFiles, allChangedFiles, allNoAppliedChangesByFile);
 
   return "Done";
 }
 
-//TODOFIX - Missing additional conditions
+//TODOFIX - Look into with other fixes are not applied
 // Finds the fixes that don't make any changes (install module), and out of scope of the use case such as import, fixMissingFunctionDeclaration
-function isNoAppliedFix(fixAndDiagnostic: FixAndDiagnostic): boolean {
+function isNotAppliedFix(fixAndDiagnostic: FixAndDiagnostic): boolean {
   return !fixAndDiagnostic.fix.changes.length
     || fixAndDiagnostic.fix.fixName === 'import'
-    || fixAndDiagnostic.fix.fixName === 'fixMissingFunctionDeclaration'
-  // && codefix.fixName !== "fixMissingMember"); TODOFIX - I probably wont need this once issue 49993 is fixed
+    || fixAndDiagnostic.fix.fixName === 'fixMissingFunctionDeclaration';
 }
-
 
 function getAppliedAndNoAppliedFixes(flatCodeFixesAndDiagnostics: FixAndDiagnostic[]): [FixAndDiagnostic[], CodeFixAction[]] {
   let fixesAndDiagnostics: FixAndDiagnostic[] = [];
   let noAppliedFixes: CodeFixAction[] = [];
   flatCodeFixesAndDiagnostics.forEach((fixAndDiagnostic) => {
-    if (isNoAppliedFix(fixAndDiagnostic)) noAppliedFixes.push(fixAndDiagnostic.fix);
-    else fixesAndDiagnostics.push(fixAndDiagnostic);
+    if (isNotAppliedFix(fixAndDiagnostic)) {
+      noAppliedFixes.push(fixAndDiagnostic.fix);
+    }
+    else {
+      fixesAndDiagnostics.push(fixAndDiagnostic);
+    }
   })
   return [fixesAndDiagnostics, noAppliedFixes]
 }
 
-export async function getCodeFixesFromProject(project: Project, opt: Options, host: Host, validFiles: string[]): Promise<[Map<string, TextChange[]>, Map<string, TextChange[]>]> {
+export async function getCodeFixesFromProject(project: Project, opt: Options, host: Host, validFiles: string[]): Promise<[Map<string, TextChange[]>, CodeFixAction[]]> {
+
+  let codefixes: readonly CodeFixAction[] = [];
+  let fixesAndDiagnostics: FixAndDiagnostic[] = [];
+  let noAppliedFixes: CodeFixAction[] = [];
 
   // pull all codefixes.
   const diagnosticsPerFile = getDiagnostics(project);
 
   if (!diagnosticsPerFile.length) {
     host.log("No more diagnostics.");
-    return [new Map<string, TextChange[]>(), new Map<string, TextChange[]>]
+    return [new Map<string, TextChange[]>(), []]
   }
 
-  // pull codefixes from diagnostics.  If errorCode is specified, only pull fixes for that/those errors. If file is specified, only pull fixes for that/those files.
-  //    Otherwise, pull all fixes
-  let [filteredDiagnostics, acceptedDiagnosticsOut] = filterDiagnosticsByErrorCode(diagnosticsPerFile, opt.errorCode, validFiles); //TODOFIX - Instead of finding noAppliedFixes later, diagnostics codes that are out could be removed here, is that an option?
-  acceptedDiagnosticsOut.forEach((string_describe: unknown) => {
-    host.log(string_describe);
+  // Filter diagnostics. If errorCode is specified, only pull fixes for that/those errors. If file is specified, only pull fixes for that/those files.
+  // Otherwise, pull all diagnostics
+  let [filteredDiagnostics, acceptedDiagnosticsOut] = filterDiagnosticsByFileAndErrorCode(diagnosticsPerFile, opt.errorCode, validFiles);
+  acceptedDiagnosticsOut.forEach((s: string) => { host.log(s); });
+
+  const codefixesPerFile = filteredDiagnostics.map(function (d: readonly Diagnostic[]) {
+    const fixesAndDiagnostics = (getCodeFixesForFileInteractive(project, d))
+    return fixesAndDiagnostics;
   });
 
-  let codefixesPerFile;
-  let codefixes: readonly CodeFixAction[] = [];
-  let fixesAndDiagnostics: FixAndDiagnostic[] = [];
-  let fixesAndDiagnosticsLength = 0;
-  let updatedCodeFixes: CodeFixAction[] = [];
-  let noAppliedFixes: CodeFixAction[] = [];
+  const flatCodeFixesAndDiagnostics = <FixAndDiagnostic[]>_.flatten(codefixesPerFile);
+  let [filteredCodeFixesAndDiagnostics, filteredCodeFixByNameOut] = filterCodeFixesByFixName(flatCodeFixesAndDiagnostics, opt.fixName);
+  filteredCodeFixByNameOut.forEach((s: string) => { host.log(s); });
 
-  //TODOFIX - Rework this so that the function doesn't contain this if/else
+  [fixesAndDiagnostics, noAppliedFixes] = getAppliedAndNoAppliedFixes(filteredCodeFixesAndDiagnostics);
+
+  if (!opt.showMultiple) {
+    fixesAndDiagnostics = removeMutilpleDiagnostics(fixesAndDiagnostics);
+  }
+  fixesAndDiagnostics = removeDuplicatedFixes(fixesAndDiagnostics);
+
+  host.log(`${fixesAndDiagnostics.length} will be applied. There are ${noAppliedFixes.length} no applied fixes`);
+
   if (opt.interactiveMode) {
-    codefixesPerFile = filteredDiagnostics.map(function (d: readonly Diagnostic[]) {
-      const fixesAndDiagnostics = (getCodeFixesForFileInteractive(project, d))
-      return fixesAndDiagnostics;
-    });
-    const flatCodeFixesAndDiagnostics = <FixAndDiagnostic[]>_.flatten(codefixesPerFile);
-    [fixesAndDiagnostics, noAppliedFixes] = getAppliedAndNoAppliedFixes(flatCodeFixesAndDiagnostics);
-
-    if (!opt.showMultiple) {
-      fixesAndDiagnostics = removeMutilpleDiagnostics(fixesAndDiagnostics);
-    }
-
-    fixesAndDiagnostics = removeDuplicatedFixes(fixesAndDiagnostics);
-    fixesAndDiagnosticsLength = fixesAndDiagnostics.length;
-    updatedCodeFixes = await getFileFixes(project, host, opt, fixesAndDiagnostics);
+    codefixes = await getFileFixes(project, host, fixesAndDiagnostics, opt.showMultiple);
   }
   else {
-    codefixesPerFile = filteredDiagnostics.map(function (d: readonly Diagnostic[]) {
-      const codefixes = (getCodeFixesForFile(project, d))
-      return codefixes;
-    });
-    const flatCodeFixes = <CodeFixAction[]>_.flatten(codefixesPerFile);
-    codefixes = flatCodeFixes.filter((codefix) => codefix.changes.length);
-    noAppliedFixes = flatCodeFixes.filter((codefix) => !codefix.changes.length);
+    codefixes = fixesAndDiagnostics.map((fixAndDiagnostic) => { return fixAndDiagnostic.fix });
   }
 
-  // filter for codefixes if applicable, then organize textChanges by what file they alter
-  const [textChangesByFile, filterCodefixOut] = opt.interactiveMode ? getTextChangeDict(opt, updatedCodeFixes, fixesAndDiagnosticsLength) : getTextChangeDict(opt, codefixes);
-  const [pendingChangesByFile, filterCodefixOutNoChangeFixes] = getTextChangeDict(opt, noAppliedFixes);
-  filterCodefixOut.forEach((s: string) => { host.log(s); });
+  // Organize textChanges by what file they alter
+  const textChangesByFile = getTextChangeDict(codefixes);
 
-  return [textChangesByFile, pendingChangesByFile];
+  return [textChangesByFile, noAppliedFixes];
 }
 
 export function getDiagnostics(project: Project): (readonly Diagnostic[])[] {
@@ -301,37 +331,38 @@ export function getDiagnostics(project: Project): (readonly Diagnostic[])[] {
   return diagnostics;
 }
 
-
-export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[])[], errorCodes: number[], validFiles?: string[]): [(readonly Diagnostic[])[], string[]] {
+export function filterDiagnosticsByFileAndErrorCode(diagnostics: (readonly Diagnostic[])[], errorCodes: number[], validFiles?: string[]): [(readonly Diagnostic[])[], string[]] {
   // if errorCodes were passed in, only use the specified errors
   // diagnostics is guaranteed to not be [] or [[]]
+  const filteredDiagnostics = diagnostics.filter((diagnostics) => diagnostics.length);
   let returnStrings = <string[]>[];
+  let returnDiagnostics: Diagnostic[][] = [];
   if (errorCodes.length || validFiles?.length) {
     if (validFiles?.length) {
       let length = 0;
-      const filteredDiagnostics = diagnostics.filter((diagnostics) => diagnostics.length);
-      let returnDiagnostics = new Array<Diagnostic[]>;
+      let j = -1;
 
       for (let i = 0; i < filteredDiagnostics.length; i++) {
-        let index = 0;
-        returnDiagnostics[i] = new Array<Diagnostic>;
-        filteredDiagnostics[i].filter((diagnostic) => { //TODOFIX - Each filteredDiagnostics array corresponds to a single file so this can be improved
-          if (diagnostic.file && validFiles) {
-            if (validFiles.indexOf(path.normalize(diagnostic.file?.fileName)) != -1) {
-              returnDiagnostics[i][index] = diagnostic;
-              index++;
-              length++;
-            }
-          }
-        });
+        if (validFiles.includes(path.normalize(filteredDiagnostics[i][0].file?.fileName!))) {
+          let index = 0;
+          j++;
+          returnDiagnostics[j] = new Array;
+          filteredDiagnostics[i].filter((diagnostic) => {
+            returnDiagnostics[j][index] = diagnostic;
+            length++;
+            index++;
+          });
+        }
       }
-      returnDiagnostics = returnDiagnostics.filter((diagnostics) => diagnostics.length);
+
+      if (length === 0) {
+        returnStrings.push(`No diagnostics found for files`);
+      }
+      else {
+        returnStrings.push(`Found ${length} diagnostics for the given files`);
+      }
       diagnostics = returnDiagnostics;
-
-      if (length === 0) returnStrings.push(`No diagnostics founds for files`);
-      else returnStrings.push(`Found ${length} diagnostics for given files`);
     }
-
 
     if (errorCodes.length) {
       let errorCounter = new Map<number, number>();
@@ -378,29 +409,9 @@ export function filterDiagnosticsByErrorCode(diagnostics: (readonly Diagnostic[]
   }, 0)} diagnostics in ${diagnostics.length} files`]];
 }
 
-interface FixAndDiagnostic {
+export interface FixAndDiagnostic {
   fix: CodeFixAction;
   diagnostic: Diagnostic;
-}
-
-export function getCodeFixesForFile(project: Project, diagnostics: readonly Diagnostic[]): CodeFixAction[] {
-  // expects already filtered diagnostics
-  const service = project.languageService;
-  return flatMap(diagnostics, d => {
-    if (d.file && d.start !== undefined && d.length !== undefined) {
-      return service.getCodeFixesAtPosition(
-        d.file.fileName,
-        d.start,
-        d.start + d.length,
-        [d.code],
-        project.ts.getDefaultFormatCodeSettings(os.EOL),
-        {}).map((fix: CodeFixAction) => {
-          return fix;
-        });
-    } else {
-      return [];
-    }
-  })
 }
 
 export function getCodeFixesForFileInteractive(project: Project, diagnostics: readonly Diagnostic[]): FixAndDiagnostic[] {
@@ -427,13 +438,11 @@ function getFileTextChangesFromCodeFix(codefix: CodeFixAction): readonly FileTex
   return codefix.changes;
 }
 
-export function getTextChangeDict(opt: Options, codefixes: readonly CodeFixAction[], length?: number): [Map<string, TextChange[]>, string[]] {
+export function getTextChangeDict(codefixes: readonly CodeFixAction[]): Map<string, TextChange[]> {
   let textChangeDict = new Map<string, TextChange[]>();
 
-  const [filteredFixes, out] = filterCodeFixesByFixName(codefixes, opt.fixName, length);
-
-  for (let i = 0; i < filteredFixes.length; i++) {
-    const fix = filteredFixes[i];
+  for (let i = 0; i < codefixes.length; i++) {
+    const fix = codefixes[i];
     const changes = getFileTextChangesFromCodeFix(fix);
 
     for (let j = 0; j < changes.length; j++) {
@@ -452,63 +461,26 @@ export function getTextChangeDict(opt: Options, codefixes: readonly CodeFixActio
     }
   }
 
-  return [textChangeDict, out];
+  return textChangeDict;
 }
 
-export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], fixNames: string[], originalLength?: number): [readonly CodeFixAction[], string[]] {
-  if (!fixNames.length) {
+export function filterCodeFixesByFixName(codeFixesAndDiagnostics: FixAndDiagnostic[], fixNames: string[]): [FixAndDiagnostic[], string[]] {
+  if (fixNames.length === 0) {
     // empty argument behavior... currently, we just keep all fixes if none are specified
-    let returnStrings = <string[]>[];
-    let codeFixes = new Set<string>();
-    let fixesNames = new Array<string>();
-    let fixesString: string[] = [];
-    let fixesFound = '';
-    const appliedFixesLength = codefixes.length;
-    //TODOFIX - This count is off because of the fixes in the same line
-    if (originalLength) {
-      if (appliedFixesLength === 0) { returnStrings.push(`Found ${originalLength} codefixes and none were accepted by the user`); }
-      else if (appliedFixesLength === originalLength) { returnStrings.push(`Found ${originalLength} codefixes and all were accepted by user`); }
-      else if (appliedFixesLength === 1) { returnStrings.push(`Found ${originalLength} codefixes, 1 code fix was accepted by the user`); }
-      else { returnStrings.push(`Found ${originalLength} codefixes, ${appliedFixesLength} were accepted by the user`); }
-    }
-    if (!originalLength) {
-      fixesFound += `Found ${codefixes.length} codefixes`;
-      codefixes.forEach((codeFix: CodeFixAction) => {
-        if (codeFix.fixName !== undefined && !codeFixes.has(codeFix.fixName)) {
-          codeFixes.add(codeFix.fixName);
-          fixesNames.push(codeFix.fixName);
-        }
-      })
-      const fixesLength = fixesNames.length;
-      if (fixesLength === 1) {
-        fixesFound += `. Fix ${fixesNames[0]} was found`;
-      }
-      if (fixesLength >= 2) {
-        fixesFound += `. The codefixes found are: `;
-        for (let i = 0; i < fixesLength; i++) {
-          fixesFound += fixesNames[i];
-          if (i !== fixesLength - 1) {
-            fixesFound += `, `;
-          }
-        }
-      }
-    }
-    returnStrings.push(fixesFound);
-    return [codefixes, returnStrings];
+    return [codeFixesAndDiagnostics, ["Found " + codeFixesAndDiagnostics.length + " codefixes"]];
   }
-
   // cannot sort by fixId right now since fixId is a {}
   // do we want to distinguish the case when no codefixes are picked? (no hits)
 
   let fixCounter = new Map<string, number>();
-  let out: string[] = [];
-  const filteredFixes = codefixes.filter(function (fix: { fixName: any; }) {
-    if (fixNames.includes(fix.fixName)) {
-      const currentVal = fixCounter.get(fix.fixName);
+  let out = <string[]>[];
+  const filteredFixesAndDiagnostics = codeFixesAndDiagnostics.filter((codeFixAndDiagnostic) => {
+    if (codeFixAndDiagnostic.fix && fixNames.includes(codeFixAndDiagnostic.fix.fixName)) {
+      const currentVal = fixCounter.get(codeFixAndDiagnostic.fix.fixName);
       if (currentVal !== undefined) {
-        fixCounter.set(fix.fixName, currentVal + 1);
+        fixCounter.set(codeFixAndDiagnostic.fix.fixName, currentVal + 1);
       } else {
-        fixCounter.set(fix.fixName, 1);
+        fixCounter.set(codeFixAndDiagnostic.fix.fixName, 1);
       }
       return true;
     }
@@ -518,13 +490,13 @@ export function filterCodeFixesByFixName(codefixes: readonly CodeFixAction[], fi
   fixNames.forEach((name: string) => {
     const count = fixCounter.get(name);
     if (count === undefined) {
-      out.push(`No codefixes found with name ${name}`);
+      out.push("No codefixes found with name " + name)
     } else {
-      out.push(`Found ${count} codefixes with name ${name}`);
+      out.push("Found " + count + " codefixes with name " + name);
     }
   });
 
-  return [filteredFixes, out];
+  return [filteredFixesAndDiagnostics, out];
 }
 
 function getFileNameAndTextChangesFromCodeFix(ftchanges: FileTextChanges): [string, TextChange[]] | undefined {
@@ -539,10 +511,11 @@ export interface ChangedFile {
   newText: string;
 }
 
-async function getUpdatedCodeFixesAndDiagnostics(codeFixesAndDiagnostics: FixAndDiagnostic[], codefixes: CodeFixAction[], count: number, showMultiple?: boolean): Promise<[FixAndDiagnostic[], CodeFixAction[]]> {
+async function getUpdatedCodeFixesAndDiagnostics(codeFixesAndDiagnostics: FixAndDiagnostic[], fixesInTheSameSpan: FixAndDiagnostic[], codefixes: CodeFixAction[], count: number, showMultiple?: boolean): Promise<[FixAndDiagnostic[], CodeFixAction[]]> {
   const currentDiagnostic = codeFixesAndDiagnostics[0].diagnostic;
   const currentCodeFix = codeFixesAndDiagnostics[0].fix;
-  const userInput = await getInputFromUser(codeFixesAndDiagnostics[0].fix, showMultiple);
+  const userInput = fixesInTheSameSpan.length ? await getUserPickFromMultiple({ currentFixesAndDiagnostics: fixesInTheSameSpan, isSameSpan: true })
+    : await getUserPickFromMultiple({ codefix: codeFixesAndDiagnostics[0].fix, showMultiple });
 
   if (userInput === Choices.ACCEPT) {
     if (showMultiple) {
@@ -556,7 +529,7 @@ async function getUpdatedCodeFixesAndDiagnostics(codeFixesAndDiagnostics: FixAnd
   }
   else if (userInput === Choices.ACCEPTALL) {
     if (showMultiple) {
-      codeFixesAndDiagnostics = removeMutilpleDiagnostics(codeFixesAndDiagnostics, Choices.ACCEPTALL);
+      codeFixesAndDiagnostics = removeMutilpleDiagnostics(codeFixesAndDiagnostics);
     }
     let updatedFixesAndDiagnostics = codeFixesAndDiagnostics.filter((diagnosticAndFix) => diagnosticAndFix.diagnostic.code === currentDiagnostic.code);
     updatedFixesAndDiagnostics.map((diagnosticAndFix) => {
@@ -572,33 +545,63 @@ async function getUpdatedCodeFixesAndDiagnostics(codeFixesAndDiagnostics: FixAnd
     codeFixesAndDiagnostics.splice(0, count);
   }
   else if (userInput === Choices.SHOWMULTIPLE) {
-    const chooseCodeFix = await getUserPick(codeFixesAndDiagnostics.slice(0, count))
-    //TODOFIX - Implement Back option
-    // if (chooseCodeFix === Choices.BACK) {}
+    const chooseCodeFix = await getUserPickFromMultiple({ currentFixesAndDiagnostics: codeFixesAndDiagnostics.slice(0, count) })
     if (codeFixesAndDiagnostics.filter((codeFixAndDiagnostic) => `"${codeFixAndDiagnostic.fix.fixName}" fix with description "${codeFixAndDiagnostic.fix.description}"` === chooseCodeFix).length) {
       codefixes.push(codeFixesAndDiagnostics.filter((codeFixAndDiagnostic) => `"${codeFixAndDiagnostic.fix.fixName}" fix with description "${codeFixAndDiagnostic.fix.description}"` === chooseCodeFix)[0].fix);
+      codeFixesAndDiagnostics.splice(0, count);
     }
-    codeFixesAndDiagnostics.splice(0, count);
+  }
+  else {
+    let newText = "";
+    if (codeFixesAndDiagnostics.filter((codeFixAndDiagnostic) => {
+      let newText = map(codeFixAndDiagnostic.fix.changes[0].textChanges, 'newText').join(" ").trim();
+      return `"${codeFixAndDiagnostic.fix.fixName}" fix with new text "${newText}"`;;
+    })) {
+      codefixes.push(codeFixesAndDiagnostics.filter((codeFixAndDiagnostic) => {
+        let newText = map(codeFixAndDiagnostic.fix.changes[0].textChanges, 'newText').join(" ").trim();
+        return `"${codeFixAndDiagnostic.fix.fixName}" fix with new text "${newText}"`;;
+      })[0].fix);
+      codeFixesAndDiagnostics.splice(0, count);
+    }
   }
   return [codeFixesAndDiagnostics, codefixes];
 }
 
+async function getUserPickFromMultiple(args: { codefix?: CodeFixAction, currentFixesAndDiagnostics?: FixAndDiagnostic[], isSameSpan?: boolean, showMultiple?: boolean }): Promise<string> {
+  let choices: string[] = [];
+  let message: string = "";
+  if (args.codefix && args.showMultiple) {
+    message = `Would you like to apply the ${args.codefix.fixName} fix with description "${args.codefix.description}"?`;
+    choices = [Choices.ACCEPT, Choices.ACCEPTALL, Choices.SKIPALL, Choices.SKIP, Choices.SHOWMULTIPLE];
+  }
+  else if (args.codefix && !args.showMultiple) {
+    message = `Would you like to apply the ${args.codefix.fixName} fix with description "${args.codefix.description}"?`;
+    choices = [Choices.ACCEPT, Choices.ACCEPTALL, Choices.SKIPALL, Choices.SKIP];
+  }
+  else if (args.isSameSpan && args.currentFixesAndDiagnostics) {
+    message = `Which fix would you like to apply?`;
+    choices = args.currentFixesAndDiagnostics.map((codeFixAndDiagnostic) => {
+      let newText = map(codeFixAndDiagnostic.fix.changes[0].textChanges, 'newText').join(" ").trim();
+      return `"${codeFixAndDiagnostic.fix.fixName}" fix with new text "${newText}"`;
+    });
+  }
+  else if (args.currentFixesAndDiagnostics) {
+    message = `Which fix would you like to apply?`;
+    choices = args.currentFixesAndDiagnostics.map((codeFixAndDiagnostic) => {
+      return `"${codeFixAndDiagnostic.fix.fixName}" fix with description "${codeFixAndDiagnostic.fix.description}"`
+    });
+  }
 
-async function getUserPick(currentFixesAndDiagnostics: FixAndDiagnostic[]): Promise<string> {
-  const choices = currentFixesAndDiagnostics.map((codeFixAndDiagnostic) => {
-    return `"${codeFixAndDiagnostic.fix.fixName}" fix with description "${codeFixAndDiagnostic.fix.description}"`
-  });
-  // choices.push(Choices.BACK);
   const choice = await inquirer
     .prompt([
       {
-        name: "codeFix",
+        name: "userInput",
         type: "list",
-        message: `Which fix would you like to apply?`,
+        message: message,
         choices: choices
       },
     ]);
-  return choice.codeFix;
+  return choice.userInput;
 };
 
 export interface ChangeDiagnostic {
@@ -607,12 +610,8 @@ export interface ChangeDiagnostic {
   length?: number,
 }
 
-// TODOFIX - Should make DRY
-// Removes multiple code fixes for the diagnostic if the user accepts the first one
-// Removes mutliple code fixes if the user decides to accept all of that type
-// Removes additional code fixes if the user decides not to show multiple
-// It will always keep the first code fix returned for the diagnostic
-function removeMutilpleDiagnostics(codeFixesAndDiagnostics: FixAndDiagnostic[], choice?: Choices.ACCEPT | Choices.ACCEPTALL): FixAndDiagnostic[] {
+// Removes multiple code fixes for the diagnostic if the user accepts the first one or to accept all of that type
+function removeMutilpleDiagnostics(codeFixesAndDiagnostics: FixAndDiagnostic[], choice?: Choices.ACCEPT): FixAndDiagnostic[] {
   if (choice === Choices.ACCEPT) {
     for (let i = 1; i < codeFixesAndDiagnostics.length; i++) {
       let count = 1;
@@ -625,10 +624,6 @@ function removeMutilpleDiagnostics(codeFixesAndDiagnostics: FixAndDiagnostic[], 
         codeFixesAndDiagnostics.splice(0, count);
       }
     }
-  }
-  // TODOFIX - Implement and test this
-  else if (choice === Choices.ACCEPTALL) {
-
   }
   else {
     for (let i = 0; i < codeFixesAndDiagnostics.length; i++) {
@@ -674,7 +669,9 @@ function getSecondDiagnostic(project: Project, fileName: string, currentCodeFix:
   (secondSourceFile as any).lineMap = undefined;
   if (secondFileContents) {
     const newFileContents = applyChangestoFile(secondFileContents, currentTextChanges, true);
-    if (secondDiagnostic.file) secondDiagnostic.file.text = newFileContents;
+    if (secondDiagnostic.file) {
+      secondDiagnostic.file.text = newFileContents;
+    }
   }
   return secondDiagnostic;
 }
@@ -709,21 +706,21 @@ function isFixAppliedToTheSameSpan(codeFixesAndDiagnostics: FixAndDiagnostic[], 
   if (codeFixesAndDiagnostics[first + 1]) {
     const firstDiagnosticAndFix = codeFixesAndDiagnostics[first];
     const secondDiagnosticAndFix = codeFixesAndDiagnostics[first + 1];
-    return firstDiagnosticAndFix.diagnostic.code === secondDiagnosticAndFix.diagnostic.code &&
-      firstDiagnosticAndFix.fix.changes[0].fileName === secondDiagnosticAndFix.fix.changes[0].fileName
+    return firstDiagnosticAndFix.diagnostic.code === secondDiagnosticAndFix.diagnostic.code
+      && firstDiagnosticAndFix.fix.changes[0].fileName === secondDiagnosticAndFix.fix.changes[0].fileName
       && firstDiagnosticAndFix.fix.changes[0].textChanges[0].newText !== secondDiagnosticAndFix.fix.changes[0].textChanges[0].newText
-      && firstDiagnosticAndFix.fix.changes[0].textChanges[0].span.start === secondDiagnosticAndFix.fix.changes[0].textChanges[0].span.start
-      && firstDiagnosticAndFix.fix.changes[0].textChanges[0].span.length === secondDiagnosticAndFix.fix.changes[0].textChanges[0].span.length;
+      && firstDiagnosticAndFix.fix.changes[0].textChanges[0].span.start === secondDiagnosticAndFix.fix.changes[0].textChanges[0].span.start;
   }
   return false;
 }
 
-async function displayDiagnostic(project: Project, host: Host, opt: Options, codeFixesAndDiagnostics: FixAndDiagnostic[], codefixes: CodeFixAction[]): Promise<[FixAndDiagnostic[], CodeFixAction[]]> {
+async function displayDiagnostic(project: Project, host: Host, codeFixesAndDiagnostics: FixAndDiagnostic[], codefixes: CodeFixAction[], showMultiple: boolean): Promise<[FixAndDiagnostic[], CodeFixAction[]]> {
   let currentUpdatedCodeFixes: CodeFixAction[] = [];
   let updatedFixesAndDiagnostics: FixAndDiagnostic[] = [];
   const currentCodeFix: CodeFixAction = codeFixesAndDiagnostics[0].fix;
   const currentDiagnostic = codeFixesAndDiagnostics[0].diagnostic;
   let diagnosticsInTheSameLine: Diagnostic[] = [];
+  let fixesInTheSameSpan: FixAndDiagnostic[] = [];
   let count = 1;
 
   if (isAdditionalFixForSameDiagnostic(codeFixesAndDiagnostics, 0)) {
@@ -733,8 +730,7 @@ async function displayDiagnostic(project: Project, host: Host, opt: Options, cod
       count++;
     }
   }
-
-  if (isAdditionalFixInTheSameLine(codeFixesAndDiagnostics, 0)) {
+  else if (isAdditionalFixInTheSameLine(codeFixesAndDiagnostics, 0)) {
     let j = 0;
     diagnosticsInTheSameLine.push(codeFixesAndDiagnostics[j].diagnostic);
     while (isAdditionalFixInTheSameLine(codeFixesAndDiagnostics, j)) {
@@ -743,10 +739,15 @@ async function displayDiagnostic(project: Project, host: Host, opt: Options, cod
       diagnosticsInTheSameLine.push(codeFixesAndDiagnostics[j].diagnostic);
     }
   }
-
-  //TODOFIX - Implement this for when both fixes are applied to the same span but the fixes aren't equal
-  if (isFixAppliedToTheSameSpan(codeFixesAndDiagnostics, 0)) {
-    console.log("Fix is applied to the same span");
+  else if (isFixAppliedToTheSameSpan(codeFixesAndDiagnostics, 0)) {
+    // This is probably not true all the time
+    let j = 0;
+    fixesInTheSameSpan.push(codeFixesAndDiagnostics[j]);
+    while (isFixAppliedToTheSameSpan(codeFixesAndDiagnostics, j)) {
+      j++;
+      count++;
+      fixesInTheSameSpan.push(codeFixesAndDiagnostics[j]);
+    }
   }
 
   if (codeFixesAndDiagnostics[0].fix.changes.length > 1) {
@@ -792,26 +793,41 @@ async function displayDiagnostic(project: Project, host: Host, opt: Options, cod
       }
 
       // Changes are made in the same file in the same location where the diagnostic is
-      if (!changesOnDifferentLocation) {
+      if (!changesOnDifferentLocation && !fixesInTheSameSpan.length) {
         (sourceFile as any).lineMap = undefined;
         const newFileContents = applyChangestoFile(originalContents, currentTextChanges, true);
-        if (currentDiagnostic.file) currentDiagnostic.file.text = newFileContents;
+        if (currentDiagnostic.file) {
+          currentDiagnostic.file.text = newFileContents;
+        }
       }
 
-      diagnosticsInTheSameLine.length ? host.log(formatDiagnosticsWithColorAndContextTsFix(diagnosticsInTheSameLine, host)) : host.log(formatDiagnosticsWithColorAndContext([currentDiagnostic], host));
+      host.log('\n');
+      //Fixes affect the same text span
+      if (fixesInTheSameSpan.length) {
+        host.log(formatFixesInTheSameSpan(fixesInTheSameSpan, host));
+      }
+      //More than one fix in the same line
+      else if (diagnosticsInTheSameLine.length) {
+        host.log(formatDiagnosticsWithColorAndContextTsFix(diagnosticsInTheSameLine, host))
+      }
+      else {
+        host.log(formatDiagnosticsWithColorAndContext([currentDiagnostic], host));
+      }
 
       // Display fix on different location
-      if (changesOnDifferentLocation && secondDiagnostic) {
+      if (changesOnDifferentLocation && secondDiagnostic && !fixesInTheSameSpan.length) {
         host.log(`Please review the fix below for the diagnostic above`);
         host.log(formatFixOnADifferentLocation([secondDiagnostic], host));
       }
 
       //Get user's choice and updated fixes and diagnostics
-      const showMultiple = opt.showMultiple && count > 1 && !diagnosticsInTheSameLine.length;
-      [updatedFixesAndDiagnostics, currentUpdatedCodeFixes] = await getUpdatedCodeFixesAndDiagnostics(codeFixesAndDiagnostics, codefixes, count, showMultiple); //TODOFIX - I believe that if I have diagnosticsInTheSameLine as an argument, I can eliminate duplicates in codefixes
+      const isShowMultiple = showMultiple && count > 1 && !diagnosticsInTheSameLine.length;
+      [updatedFixesAndDiagnostics, currentUpdatedCodeFixes] = await getUpdatedCodeFixesAndDiagnostics(codeFixesAndDiagnostics, fixesInTheSameSpan, codefixes, count, isShowMultiple);
 
       //Reset text and lineMap to their original contents
-      if (currentDiagnostic.file) currentDiagnostic.file.text = originalContents;
+      if (currentDiagnostic.file) {
+        currentDiagnostic.file.text = originalContents;
+      }
       (sourceFile as any).lineMap = currentLineMap;
 
     }
@@ -819,13 +835,13 @@ async function displayDiagnostic(project: Project, host: Host, opt: Options, cod
   return [updatedFixesAndDiagnostics, currentUpdatedCodeFixes];
 }
 
-async function getFileFixes(project: Project, host: Host, opt: Options, codeFixesAndDiagnostics: FixAndDiagnostic[]): Promise<CodeFixAction[]> {
+async function getFileFixes(project: Project, host: Host, codeFixesAndDiagnostics: FixAndDiagnostic[], showMultiple: boolean): Promise<CodeFixAction[]> {
   let codefixes: CodeFixAction[] = [];
   let updatedFixesAndDiagnostics: FixAndDiagnostic[] = [];
   let currentUpdatedCodeFixes: CodeFixAction[] = [];
 
   for (let i = 0; i < codeFixesAndDiagnostics.length; i++) {
-    [updatedFixesAndDiagnostics, currentUpdatedCodeFixes] = await displayDiagnostic(project, host, opt, codeFixesAndDiagnostics, codefixes);
+    [updatedFixesAndDiagnostics, currentUpdatedCodeFixes] = await displayDiagnostic(project, host, codeFixesAndDiagnostics, codefixes, showMultiple);
     codeFixesAndDiagnostics = updatedFixesAndDiagnostics;
     codefixes = currentUpdatedCodeFixes;
     i = -1;
@@ -901,25 +917,10 @@ export function filterOverlappingFixes(sortedFixList: TextChange[]): [TextChange
 enum Choices {
   ACCEPT = 'Accept',
   ACCEPTALL = 'Accept all quick fixes for this diagnostic code in this pass',
-  BACK = 'Go back',
   SKIPALL = 'Skip this diagnostic code this pass',
   SKIP = 'Skip',
   SHOWMULTIPLE = 'Show more quick fixes for this diagnostic'
 }
-
-async function getInputFromUser(codefix: CodeFixAction, showMultiple?: boolean): Promise<string> {
-  const choice = await inquirer
-    .prompt([
-      {
-        name: "choice",
-        type: "list",
-        message: `Would you like to apply the ${codefix.fixName} fix with description "${codefix.description}"?`,
-        choices: showMultiple ? [Choices.ACCEPT, Choices.ACCEPTALL, Choices.SKIPALL, Choices.SKIP, Choices.SHOWMULTIPLE] : [Choices.ACCEPT, Choices.ACCEPTALL, Choices.SKIPALL, Choices.SKIP]
-      },
-    ]);
-  return choice.choice;
-};
-
 
 function applyChangestoFile(originalContents: string, fixList: readonly TextChange[], isGetFileFixes?: boolean): string {
   // maybe we want to have this and subsequent functions to return a diagnostic
@@ -941,10 +942,8 @@ export function doTextChanges(fileText: string, textChanges: readonly TextChange
 export function doTextChangeOnString(currentFileText: string, change: TextChange, isGetFileFixes?: boolean): string {
   const prefix = currentFileText.substring(0, change.span.start);
   let middle = "";
-  // if (isGetFileFixes) middle = `\x1b[32m${change.newText}\x1b[0m`;
   if (isGetFileFixes) middle = compareContentsAndLog(currentFileText.substring(change.span.start, change.span.start + change.span.length), change.newText);
   else middle = change.newText;
-  // const middle = change.newText;
   const suffix = currentFileText.substring(change.span.start + change.span.length);
   return prefix + middle + suffix;
 }
@@ -961,19 +960,28 @@ function compareContentsAndLog(str1: string, str2: string): string {
     if (part.removed) color = 31;
     if (part.added || part.removed) {
       //Purely aesthetics
-      if (part.value.startsWith(newLine)) {
+      if (part.value.startsWith(newLine) && part.value.endsWith(newLine)) {
+        middleString += newLine;
+        middleString += `\x1b[${color}m${part.value.substring(2, part.value.length - 2)}\x1b[0m`;
+        middleString += newLine;
+      }
+      else if (part.value.endsWith(newLine)) {
+        middleString += `\x1b[${color}m${part.value.substring(0, part.value.length - 2)}\x1b[0m`;
+        middleString += newLine;
+      }
+      else if (part.value.startsWith(newLine)) {
         middleString += newLine;
         middleString += `\x1b[${color}m${part.value.substring(2)}\x1b[0m`;
       }
       else {
         middleString += `\x1b[${color}m${part.value}\x1b[0m`;
       }
-
     }
     else {
       middleString += `${part.value}`;
     }
   });
+
   return middleString;
 }
 
