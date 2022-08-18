@@ -17,7 +17,7 @@ export function makeOptions(cwd: string, args: string[]): Options {
         write,
     } = yargs(args)
         .scriptName("ts-fix")
-        .usage("$0 -t path/to/tsconfig.json -f nameOfCodefix")
+        .usage("$0 -t path/to/tsconfig.json")
         .option("errorCode", {
             alias: "e",
             describe: "The error code(s)",
