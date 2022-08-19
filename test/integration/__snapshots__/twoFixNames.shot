@@ -6,17 +6,16 @@ exports[`integration tests twoFixNames 9 1`] = `
   "args": [
     "-f",
     "fixOverrideModifier",
-    "addConvertToUnknownForNonOverlappingTypes",
-    "--write"
+    "addConvertToUnknownForNonOverlappingTypes"
   ],
   "logs": [
-    "Using TypeScript 4.3.5",
-    "Found 6 diagnostics in 121 files",
+    "The project is being created... \\n",
+    "Using TypeScript 4.9.0-dev.20220816",
+    "Found 6 diagnostics in 334 files",
     "Found 2 codefixes with name fixOverrideModifier",
-    "Found 3 codefixes with name addConvertToUnknownForNonOverlappingTypes",
-    "no changes remaining",
-    "Updated addoverrides.ts",
-    "Updated addunknowns.ts"
+    "Found 2 codefixes with name addConvertToUnknownForNonOverlappingTypes",
+    "Fixes to be applied: 4\\nNo applied fixes: 0",
+    "No changes remaining for ts-fix\\n"
   ],
   "remainingChanges": [
     {
@@ -35,16 +34,7 @@ exports[`integration tests twoFixNames 9 1`] = `
   ],
   "filesWritten": {
     "dataType": "Map",
-    "value": [
-      [
-        "addoverrides.ts",
-        "class Base {\\n  m() {}\\n}\\n\\nclass Derived extends Base {\\n  override m() {}\\n}\\n\\nclass MoreDerived extends Derived {\\n  override m() {}\\n}\\n"
-      ],
-      [
-        "addunknowns.ts",
-        "<string><unknown>[\\"words\\"];\\n\\n<object><unknown>\\"words\\";\\n\\n<string><unknown>0 * (4 + 3) / 100;"
-      ]
-    ]
+    "value": []
   }
 }
 `;

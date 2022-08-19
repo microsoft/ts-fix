@@ -1,1 +1,1 @@
-ts-fix -e 2339 --write
+ts-fix -e 2339

@@ -5,14 +5,15 @@ exports[`integration tests noDiagnostics 7 1`] = `
   "cwd": "cases/noDiagnostics",
   "args": [
     "-e",
-    "4114",
-    "--write"
+    "4114"
   ],
   "logs": [
-    "Using TypeScript 4.3.5",
+    "The project is being created... \\n",
+    "Using TypeScript 4.9.0-dev.20220816",
     "No diagnostics found with code 4114",
     "Found 0 codefixes",
-    "no changes remaining"
+    "Fixes to be applied: 0\\nNo applied fixes: 0",
+    "No changes remaining for ts-fix\\n"
   ],
   "remainingChanges": [
     {

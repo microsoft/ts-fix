@@ -5,15 +5,15 @@ exports[`integration tests addMissingOverrideByFixName 3 1`] = `
   "cwd": "cases/addMissingOverrideByFixName",
   "args": [
     "-f",
-    "fixOverrideModifier",
-    "--write"
+    "fixOverrideModifier"
   ],
   "logs": [
-    "Using TypeScript 4.3.5",
-    "Found 2 diagnostics in 120 files",
+    "The project is being created... \\n",
+    "Using TypeScript 4.9.0-dev.20220816",
+    "Found 2 diagnostics in 333 files",
     "Found 2 codefixes with name fixOverrideModifier",
-    "no changes remaining",
-    "Updated index.ts"
+    "Fixes to be applied: 2\\nNo applied fixes: 0",
+    "No changes remaining for ts-fix\\n"
   ],
   "remainingChanges": [
     {
@@ -28,12 +28,7 @@ exports[`integration tests addMissingOverrideByFixName 3 1`] = `
   ],
   "filesWritten": {
     "dataType": "Map",
-    "value": [
-      [
-        "index.ts",
-        "class Base {\\n  m() {}\\n}\\n\\nclass Derived extends Base {\\n  override m() {}\\n}\\n\\nclass MoreDerived extends Derived {\\n  override m() {}\\n}\\n"
-      ]
-    ]
+    "value": []
   }
 }
 `;
