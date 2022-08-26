@@ -8,12 +8,17 @@ test("checkOptions_emptyFilePath", () => {
     expect(checkOptions(createdOption)).resolves.toEqual([[], []]);
 });
 
-test('checkOptions_oneFilePath', async () => {
+test('checkOptions_oneInvalidFilePath', async () => {
+    const createdOption = makeOptions(cwd, ["--file", "\\src\\index.ts"]);
+    await expect(checkOptions(createdOption)).rejects.toThrowError('All provided files are invalid');
+  });
+
+test('checkOptions_oneValidFilePath', async () => {
     const createdOption = makeOptions(cwd, ["--file", "..\\..\\src\\index.ts"]);
     try {
         await checkOptions(createdOption);
     } catch (e) {
-        expect(e).toMatch('Error: All provided files are invalid');
+        expect(checkOptions(createdOption)).rejects.toThrowError(e);
     }
 });
 
@@ -22,7 +27,7 @@ test("checkOptions_manyFilePaths", async () => {
     try {
         await checkOptions(createdOption);
     } catch (e) {
-        expect(e).toMatch('Error: All provided files are invalid');
+        expect(checkOptions(createdOption)).rejects.toThrowError(e);
     }
 });
 
@@ -31,7 +36,7 @@ test("checkOptions_oneValidOneInvalidPath", async () => {
     try {
         await checkOptions(createdOption);
     } catch (e) {
-        expect(e).toMatch('Error: All provided files are invalid');
+        expect(checkOptions(createdOption)).rejects.toThrowError(e);
     }
 });
 
@@ -40,6 +45,6 @@ test("checkOptions_manyValidManyInvalidPaths", async () => {
     try {
         await checkOptions(createdOption);
     } catch (e) {
-        expect(e).toMatch('Error: All provided files are invalid');
+        expect(checkOptions(createdOption)).rejects.toThrowError(e);
     }
 });
