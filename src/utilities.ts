@@ -447,7 +447,7 @@ function convertToRelativePath(absoluteOrRelativePath: string, basePath: string,
 }
 
 function formatLocation(file: SourceFile, start: number, host: Host, color = formatColorAndReset) {
-    const { line: firstLine, character: firstLineChar } = getLineAndCharacterOfPosition(file, start); // TODO: GH#18217
+    const { line: firstLine, character: firstLineChar } = getLineAndCharacterOfPosition(file, start);
     const relativeFileName = host ? convertToRelativePath(file.fileName, host.getCurrentDirectory(), (fileName: string) => host.getCanonicalFileName(fileName)) : file.fileName;
 
     let output = "";
@@ -648,7 +648,7 @@ export function formatDiagnosticsWithColorAndContextTsFix(diagnostics: readonly 
     for (const diagnostic of diagnostics) {
         if (diagnostic.file) {
             const { file, start } = diagnostic;
-            output += formatLocation(file, start!, host); // TODO: GH#18217
+            output += formatLocation(file, start!, host);
             output += " - ";
         }
 
@@ -726,7 +726,7 @@ export function formatFixesInTheSameSpan(fixAndDiagnostics: FixAndDiagnostic[], 
     for (const fixAndDiagnostic of fixAndDiagnostics) {
         if (fixAndDiagnostic.diagnostic.file) {
             const { file, start } = fixAndDiagnostic.diagnostic;
-            output += formatLocation(file, start!, host); // TODO: GH#18217
+            output += formatLocation(file, start!, host);
             output += " - ";
         }
 

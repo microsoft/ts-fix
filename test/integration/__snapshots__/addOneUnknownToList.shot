@@ -8,19 +8,13 @@ exports[`integration tests addOneUnknownToList 5 1`] = `
     "2352"
   ],
   "logs": [
-    "The project is being created... \\n",
+    "The project is being created...\\r\\n",
     "Using TypeScript 4.9.0-dev.20220816",
-    "Found 1 diagnostics with code 2352",
+    "\\r\\nFound 1 diagnostics with code 2352",
     "Found 0 codefixes",
-    "Fixes to be applied: 0\\nNo applied fixes: 0",
-    "No changes remaining for ts-fix\\n"
+    "No changes remaining for ts-fix"
   ],
-  "remainingChanges": [
-    {
-      "dataType": "Map",
-      "value": []
-    }
-  ],
+  "remainingChanges": [],
   "filesWritten": {
     "dataType": "Map",
     "value": []

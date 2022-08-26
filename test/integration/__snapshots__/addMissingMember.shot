@@ -8,45 +8,16 @@ exports[`integration tests addMissingMember 0 1`] = `
     "2339"
   ],
   "logs": [
-    "The project is being created... \\n",
+    "The project is being created...\\r\\n",
     "Using TypeScript 4.9.0-dev.20220816",
-    "Found 2 diagnostics with code 2339",
+    "\\r\\nFound 2 diagnostics with code 2339",
     "Found 4 codefixes",
-    "Fixes to be applied: 2\\nNo applied fixes: 0",
-    "1 changes remaining. Initiating additional pass...\\n",
-    "Found 1 diagnostics with code 2339",
-    "Found 2 codefixes",
-    "Fixes to be applied: 1\\nNo applied fixes: 0",
-    "No changes remaining for ts-fix\\n"
+    "Fixes to be applied: 0\\r\\nNo applied fixes: 4\\r\\n",
+    "No changes remaining for ts-fix",
+    "\\r\\nThe fixes not applied by ts-fix for this project are:",
+    "fixMissingMember types.ts"
   ],
-  "remainingChanges": [
-    {
-      "dataType": "Map",
-      "value": [
-        [
-          "cases/addMissingMember/types.ts",
-          [
-            {
-              "newText": "\\n  three: any;",
-              "span": {
-                "start": 13,
-                "length": 0
-              }
-            }
-          ]
-        ]
-      ]
-    },
-    {
-      "dataType": "Map",
-      "value": [
-        [
-          "cases/addMissingMember/types.ts",
-          []
-        ]
-      ]
-    }
-  ],
+  "remainingChanges": [],
   "filesWritten": {
     "dataType": "Map",
     "value": []

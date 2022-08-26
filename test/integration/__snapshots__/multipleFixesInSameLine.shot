@@ -1,19 +1,16 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`integration tests addThreeUnknown 6 1`] = `
+exports[`integration tests multipleFixesInSameLine 7 1`] = `
 {
-  "cwd": "cases/addThreeUnknown",
+  "cwd": "cases/multipleFixesInSameLine",
   "args": [
     "-e",
-    "2352"
+    "7044"
   ],
   "logs": [
     "The project is being created...\\r\\n",
     "Using TypeScript 4.9.0-dev.20220816",
-    "\\r\\nFound 3 diagnostics with code 2352",
-    "Found 2 codefixes",
-    "Fixes to be applied: 2\\r\\nNo applied fixes: 0\\r\\n",
-    "\\r\\nFound 1 diagnostics with code 2352",
+    "\\r\\nNo diagnostics found with code 7044",
     "Found 0 codefixes",
     "No changes remaining for ts-fix"
   ],

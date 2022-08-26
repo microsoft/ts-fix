@@ -96,6 +96,5 @@ if (!module.parent) {
         const error = await codefixProject(opt, host);
         host.log(error);
     })();
-    // error is a string if codefixProject did an error
 }
 

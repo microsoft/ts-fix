@@ -61,7 +61,7 @@ export class TestHost implements Host {
 
     getDirMade() { return this.dirMade; }
 
-    getNewLine() { return "\n" }
+    getNewLine() { return "\r\n" }
 
     write(s: string) { process.stdout.write(s) };
 
