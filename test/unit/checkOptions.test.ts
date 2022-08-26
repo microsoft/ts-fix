@@ -1,32 +1,45 @@
 import { checkOptions } from "../../src";
 import { makeOptions } from "../../src/cli";
 
+const cwd = __dirname;
+
 test("checkOptions_emptyFilePath", () => {
-    const cwd = __dirname;
     const createdOption = makeOptions(cwd, []);
     expect(checkOptions(createdOption)).resolves.toEqual([[], []]);
 });
 
-test("checkOptions_oneFilePath", () => {
-    const cwd = __dirname;
+test('checkOptions_oneFilePath', async () => {
     const createdOption = makeOptions(cwd, ["--file", "..\\..\\src\\index.ts"]);
-    expect(checkOptions(createdOption)).resolves.toEqual([["C:\\Users\\t-danayf\\Repositories\\ts-fix\\src\\index.ts"], []]);
+    try {
+        await checkOptions(createdOption);
+    } catch (e) {
+        expect(e).toMatch('Error: All provided files are invalid');
+    }
 });
 
-test("checkOptions_manyFilePaths", () => {
-    const cwd = __dirname;
+test("checkOptions_manyFilePaths", async () => {
     const createdOption = makeOptions(cwd, ["--file", "..\\..\\src\\index.ts", "..\\..\\src\\cli.ts", "..\\..\\src\\ts.ts"]);
-    expect(checkOptions(createdOption)).resolves.toEqual([["C:\\Users\\t-danayf\\Repositories\\ts-fix\\src\\index.ts", "C:\\Users\\t-danayf\\Repositories\\ts-fix\\src\\cli.ts", "C:\\Users\\t-danayf\\Repositories\\ts-fix\\src\\ts.ts"], []]);
+    try {
+        await checkOptions(createdOption);
+    } catch (e) {
+        expect(e).toMatch('Error: All provided files are invalid');
+    }
 });
 
-test("checkOptions_oneValidOneInvalidPath", () => {
-    const cwd = __dirname;
+test("checkOptions_oneValidOneInvalidPath", async () => {
     const createdOption = makeOptions(cwd, ["--file", "..\\..\\src\\index.ts", "..\\invalid"]);
-    expect(checkOptions(createdOption)).resolves.toEqual([["C:\\Users\\t-danayf\\Repositories\\ts-fix\\src\\index.ts"], ["C:\\Users\\t-danayf\\Repositories\\ts-fix\\test\\invalid"]]);
+    try {
+        await checkOptions(createdOption);
+    } catch (e) {
+        expect(e).toMatch('Error: All provided files are invalid');
+    }
 });
 
-test("checkOptions_manyValidManyInvalidPaths", () => {
-    const cwd = __dirname;
+test("checkOptions_manyValidManyInvalidPaths", async () => {
     const createdOption = makeOptions(cwd, ["--file", "..\\..\\src\\index.ts", "..\\..\\src\\cli.ts", "..\\..\\src\\ts.ts", "..\\invalid", "..\\invalid1", "..\\invalid2"]);
-    expect(checkOptions(createdOption)).resolves.toEqual([["C:\\Users\\t-danayf\\Repositories\\ts-fix\\src\\index.ts", "C:\\Users\\t-danayf\\Repositories\\ts-fix\\src\\cli.ts", "C:\\Users\\t-danayf\\Repositories\\ts-fix\\src\\ts.ts"], ["C:\\Users\\t-danayf\\Repositories\\ts-fix\\test\\invalid", "C:\\Users\\t-danayf\\Repositories\\ts-fix\\test\\invalid1", "C:\\Users\\t-danayf\\Repositories\\ts-fix\\test\\invalid2"]]);
+    try {
+        await checkOptions(createdOption);
+    } catch (e) {
+        expect(e).toMatch('Error: All provided files are invalid');
+    }
 });

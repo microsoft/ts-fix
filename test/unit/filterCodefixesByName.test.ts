@@ -59,7 +59,6 @@ test("filterCodeFixesByFixName_noNamesPassedIn", () => {
     const opt = [];
     // empty argument behavior... currently, we just keep all fixes if none are specified
     const result = filterCodeFixesByFixName(fixesAndDiagnostics, opt);
-    console.log(result);
     expect(result[0]).toEqual(fixesAndDiagnostics);
     expect(result[1]).toEqual(["Found 5 codefixes"]);
 })
