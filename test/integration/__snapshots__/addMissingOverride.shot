@@ -7,35 +7,22 @@ exports[`integration tests addMissingOverride 1 1`] = `
     "-e",
     "4114",
     "-f",
-    "fixOverrideModifier",
-    "--write"
+    "fixOverrideModifier"
   ],
   "logs": [
-    "Using TypeScript 4.3.5",
-    "Found 2 diagnostics with code 4114",
+    "The project is being created...\\r\\n",
+    "Using TypeScript 4.9.0-dev.20220816",
+    "\\r\\nFound 2 diagnostics with code 4114",
     "Found 2 codefixes with name fixOverrideModifier",
-    "no changes remaining",
-    "Updated index.ts"
+    "Fixes to be applied: 2\\r\\nNo applied fixes: 0\\r\\n",
+    "\\r\\nNo diagnostics found with code 4114",
+    "No codefixes found with name fixOverrideModifier",
+    "No changes remaining for ts-fix"
   ],
-  "remainingChanges": [
-    {
-      "dataType": "Map",
-      "value": [
-        [
-          "cases/addMissingOverride/index.ts",
-          []
-        ]
-      ]
-    }
-  ],
+  "remainingChanges": [],
   "filesWritten": {
     "dataType": "Map",
-    "value": [
-      [
-        "index.ts",
-        "class Base {\\n  m() {}\\n}\\n\\nclass Derived extends Base {\\n  override m() {}\\n}\\n\\nclass MoreDerived extends Derived {\\n  override m() {}\\n}\\n"
-      ]
-    ]
+    "value": []
   }
 }
 `;

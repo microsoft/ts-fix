@@ -1,25 +1,20 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`integration tests noDiagnostics 7 1`] = `
+exports[`integration tests noDiagnostics 8 1`] = `
 {
   "cwd": "cases/noDiagnostics",
   "args": [
     "-e",
-    "4114",
-    "--write"
+    "4114"
   ],
   "logs": [
-    "Using TypeScript 4.3.5",
-    "No diagnostics found with code 4114",
+    "The project is being created...\\r\\n",
+    "Using TypeScript 4.9.0-dev.20220816",
+    "\\r\\nNo diagnostics found with code 4114",
     "Found 0 codefixes",
-    "no changes remaining"
+    "No changes remaining for ts-fix"
   ],
-  "remainingChanges": [
-    {
-      "dataType": "Map",
-      "value": []
-    }
-  ],
+  "remainingChanges": [],
   "filesWritten": {
     "dataType": "Map",
     "value": []

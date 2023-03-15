@@ -2,3 +2,4 @@ dist
 node_modules
 exampleFolder
 presrc
+package-lock.json

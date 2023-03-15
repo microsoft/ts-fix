@@ -1,50 +1,29 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`integration tests twoFixNames 9 1`] = `
+exports[`integration tests twoFixNames 10 1`] = `
 {
   "cwd": "cases/twoFixNames",
   "args": [
     "-f",
     "fixOverrideModifier",
-    "addConvertToUnknownForNonOverlappingTypes",
-    "--write"
+    "addConvertToUnknownForNonOverlappingTypes"
   ],
   "logs": [
-    "Using TypeScript 4.3.5",
-    "Found 6 diagnostics in 121 files",
+    "The project is being created...\\r\\n",
+    "Using TypeScript 4.9.0-dev.20220816",
+    "\\r\\nFound 6 diagnostics in 334 files",
     "Found 2 codefixes with name fixOverrideModifier",
-    "Found 3 codefixes with name addConvertToUnknownForNonOverlappingTypes",
-    "no changes remaining",
-    "Updated addoverrides.ts",
-    "Updated addunknowns.ts"
+    "Found 2 codefixes with name addConvertToUnknownForNonOverlappingTypes",
+    "Fixes to be applied: 4\\r\\nNo applied fixes: 0\\r\\n",
+    "\\r\\nFound 2 diagnostics in 334 files",
+    "No codefixes found with name fixOverrideModifier",
+    "No codefixes found with name addConvertToUnknownForNonOverlappingTypes",
+    "No changes remaining for ts-fix"
   ],
-  "remainingChanges": [
-    {
-      "dataType": "Map",
-      "value": [
-        [
-          "cases/twoFixNames/addoverrides.ts",
-          []
-        ],
-        [
-          "cases/twoFixNames/addunknowns.ts",
-          []
-        ]
-      ]
-    }
-  ],
+  "remainingChanges": [],
   "filesWritten": {
     "dataType": "Map",
-    "value": [
-      [
-        "addoverrides.ts",
-        "class Base {\\n  m() {}\\n}\\n\\nclass Derived extends Base {\\n  override m() {}\\n}\\n\\nclass MoreDerived extends Derived {\\n  override m() {}\\n}\\n"
-      ],
-      [
-        "addunknowns.ts",
-        "<string><unknown>[\\"words\\"];\\n\\n<object><unknown>\\"words\\";\\n\\n<string><unknown>0 * (4 + 3) / 100;"
-      ]
-    ]
+    "value": []
   }
 }
 `;
