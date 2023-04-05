@@ -97,7 +97,7 @@ export interface Options {
 // Note: Only works if the git repository folder matches tsconfig folder
 const getGitStatus = (dir: string) => new Promise<string>((resolve) => {
   const dirPath = path.dirname(dir);
-  return exec(`git --git-dir="${dirPath + "\\.git"}" --work-tree="${dirPath}" status --porcelain`, (err, stdout) => {
+  return exec(`git --git-dir="${path.join(dirPath, ".git")}" --work-tree="${dirPath}" status --porcelain`, (err, stdout) => {
     if (err) {
       throw new Error(err.message);
     }
