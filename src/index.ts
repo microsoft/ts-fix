@@ -112,7 +112,7 @@ export const checkOptions = async (opt: Options): Promise<[string[], string[]]> 
 
   // Check git status if the write flag was provided and the output folder is the same as the project folder
   // Do not allow overwriting files with previous changes on them unless --ignoreGitStatus flag was provided
-  if (opt.write && path.dirname(opt.tsconfig) === opt.outputFolder) {
+  if (opt.write && path.dirname(opt.tsconfig) === opt.outputFolder && !opt.ignoreGitStatus) {
     let isModified = false;
     const status = await (getGitStatus(opt.tsconfig));
     const splitStatus = status.split(/\r?\n/);
@@ -120,7 +120,7 @@ export const checkOptions = async (opt: Options): Promise<[string[], string[]]> 
       const re = /[MARCD?]\s(package).+?(json)/g
       isModified = splitStatus.length && splitStatus[0] !== '' ? !(splitStatus.filter((text) => { return text.match(re) }).length === splitStatus.length) : false;
     }
-    if (isModified && !opt.ignoreGitStatus) {
+    if (isModified) {
       throw new Error(`Please provide the --ignoreGitStatus flag if you are sure you'ld like to override your exisiting changes`);
     }
   }
