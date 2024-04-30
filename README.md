@@ -36,7 +36,7 @@ Options:
 ```
 
 `-t path/to/tsconfig.json` or `--tsconfig path/to/tsconfig.json` 
-Specifies the project to use the tool on. If no arguement given, the tool will use the tsconfig in the current working directory. 
+Specifies the project to use the tool on. If no argument given, the tool will use the tsconfig in the current working directory. 
 
 `-e <number>` or  `--errorCode <number>`
 Specifies the errors to fix. Several error codes can be specified during the same command. 
