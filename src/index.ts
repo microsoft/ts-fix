@@ -339,9 +339,10 @@ export async function getCodeFixesFromProject(project: Project, opt: Options, ho
 }
 
 export function getDiagnostics(project: Project): (readonly Diagnostic[])[] {
+  const compilerOptions = project.program.getCompilerOptions();
   const diagnostics = project.program.getSourceFiles().map(function (file: SourceFile) {
     return [
-      ...project.program.getDeclarationDiagnostics(file),
+      ...(compilerOptions.declaration || compilerOptions.composite ? project.program.getDeclarationDiagnostics(file) : []),
       ...project.program.getSemanticDiagnostics(file),
     ];
   });
