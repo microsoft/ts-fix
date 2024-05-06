@@ -27,7 +27,7 @@ addSerializer({
     return snapshot.cwd && snapshot.args && snapshot.logs && snapshot.changes && snapshot.filesWritten;
   },
   print(snapshot: { dirname: string, cwd: string; args: any; logs: any; changes: any; filesWritten: any; }) {
-    function replacer(_, value: any) {
+    function replacer(_key: string, value: any) {
       if (value instanceof Map) {
         return {
           dataType: 'Map',
