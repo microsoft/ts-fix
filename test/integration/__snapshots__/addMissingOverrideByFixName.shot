@@ -10,10 +10,10 @@ exports[`integration tests addMissingOverrideByFixName 3 1`] = `
   "logs": [
     "The project is being created...\\r\\n",
     "Using TypeScript 5.4.5",
-    "\\r\\nFound 2 diagnostics in 386 files",
+    "\\r\\nFound 2 diagnostics in 8 files",
     "Found 2 codefixes with name fixOverrideModifier",
     "Fixes to be applied: 2\\r\\nNo applied fixes: 0\\r\\n",
-    "\\r\\nFound 0 diagnostics in 386 files",
+    "\\r\\nFound 0 diagnostics in 8 files",
     "No codefixes found with name fixOverrideModifier",
     "No changes remaining for ts-fix"
   ],
