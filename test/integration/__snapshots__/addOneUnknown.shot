@@ -9,7 +9,7 @@ exports[`integration tests addOneUnknown 4 1`] = `
   ],
   "logs": [
     "The project is being created...\\r\\n",
-    "Using TypeScript 4.9.0-dev.20220816",
+    "Using TypeScript 5.4.5",
     "\\r\\nFound 1 diagnostics with code 2352",
     "Found 0 codefixes",
     "No changes remaining for ts-fix"

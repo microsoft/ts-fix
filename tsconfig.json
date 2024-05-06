@@ -1,10 +1,10 @@
 {
   // see https://www.typescriptlang.org/tsconfig to better understand tsconfigs
-  "include": ["src", "types"],
+  "include": ["src"],
   "compilerOptions": {
     "target": "ES2019",
-    "module": "commonjs",
-    "lib": ["dom", "esnext"],
+    "module": "Node16",
+    "lib": ["ES2019"],
     // output .d.ts declaration files for consumers
     "declaration": true,
     // output .js.map sourcemap files for consumers
@@ -21,9 +21,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": true,
     // use Node's module resolution algorithm, instead of the legacy TS one
-    "moduleResolution": "node",
-    // transpile JSX to React.createElement
-    "jsx": "react",
     // interop between ESM and CJS modules. Recommended by TS
     "esModuleInterop": true,
     // significant perf increase by skipping checking .d.ts files, particularly those in node_modules. Recommended by TS
