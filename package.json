@@ -13,7 +13,7 @@
   },
   "scripts": {
     "start": "tsc -p . --watch",
-    "build": "tsc -p .",
+    "build": "tsc -p . && tsc -p test",
     "test": "jest",
     "prepare": "tsc -p ."
   },
