@@ -112,7 +112,7 @@ export const checkOptions = async (opt: Options): Promise<[string[], string[]]> 
 
   // Check git status if the write flag was provided and the output folder is the same as the project folder
   // Do not allow overwriting files with previous changes on them unless --ignoreGitStatus flag was provided
-  if (opt.write && path.dirname(opt.tsconfig) === opt.outputFolder) {
+  if (!opt.ignoreGitStatus && opt.write && path.dirname(opt.tsconfig) === opt.outputFolder) {
     let isModified = false;
     const status = await (getGitStatus(opt.tsconfig));
     const splitStatus = status.split(/\r?\n/);
@@ -120,8 +120,8 @@ export const checkOptions = async (opt: Options): Promise<[string[], string[]]> 
       const re = /[MARCD?]\s(package).+?(json)/g
       isModified = splitStatus.length && splitStatus[0] !== '' ? !(splitStatus.filter((text) => { return text.match(re) }).length === splitStatus.length) : false;
     }
-    if (isModified && !opt.ignoreGitStatus) {
-      throw new Error(`Please provide the --ignoreGitStatus flag if you are sure you'ld like to override your exisiting changes`);
+    if (isModified) {
+      throw new Error(`Please provide the --ignoreGitStatus flag if you are sure you'd like to override your existing changes`);
     }
   }
 
@@ -312,12 +312,12 @@ export async function getCodeFixesFromProject(project: Project, opt: Options, ho
     return fixesAndDiagnostics;
   });
 
-  const flatCodeFixesAndDiagnostics = <FixAndDiagnostic[]>_.flatten(codefixesPerFile);
+  const flatCodeFixesAndDiagnostics: FixAndDiagnostic[] = _.flatten(codefixesPerFile);
   let [filteredCodeFixesAndDiagnostics, filteredCodeFixByNameOut] = filterCodeFixesByFixName(flatCodeFixesAndDiagnostics, opt.fixName);
   filteredCodeFixByNameOut.forEach((s: string) => { host.log(s); });
   [fixesAndDiagnostics, noAppliedFixes] = getAppliedAndNoAppliedFixes(filteredCodeFixesAndDiagnostics);
   if (!opt.showMultiple) {
-    fixesAndDiagnostics = removeMutilpleDiagnostics(fixesAndDiagnostics);
+    fixesAndDiagnostics = removeMultipleDiagnostics(fixesAndDiagnostics);
   }
   fixesAndDiagnostics = removeDuplicatedFixes(fixesAndDiagnostics);
   if (filteredCodeFixesAndDiagnostics.length) {
@@ -339,8 +339,12 @@ export async function getCodeFixesFromProject(project: Project, opt: Options, ho
 }
 
 export function getDiagnostics(project: Project): (readonly Diagnostic[])[] {
+  const compilerOptions = project.program.getCompilerOptions();
   const diagnostics = project.program.getSourceFiles().map(function (file: SourceFile) {
-    return project.program.getSemanticDiagnostics(file);
+    return [
+      ...(compilerOptions.declaration || compilerOptions.composite ? project.program.getDeclarationDiagnostics(file) : []),
+      ...project.program.getSemanticDiagnostics(file),
+    ];
   });
   return diagnostics;
 }
@@ -350,7 +354,7 @@ export function filterDiagnosticsByFileAndErrorCode(diagnostics: (readonly Diagn
   // if errorCodes were passed in, only use the specified errors
   // diagnostics is guaranteed to not be [] or [[]]
   let filteredDiagnostics = diagnostics.filter((diagnostics) => diagnostics.length);
-  let returnStrings = <string[]>[];
+  let returnStrings: string[] = [];
 
   // Check if file is in node_modules, if so remove it from filteredDiagnostics, we'll not be applying fixes there
   filteredDiagnostics = filteredDiagnostics.filter((filteredDiagnostic) => {
@@ -486,7 +490,7 @@ export function filterCodeFixesByFixName(codeFixesAndDiagnostics: FixAndDiagnost
   // do we want to distinguish the case when no codefixes are picked? (no hits)
 
   let fixCounter = new Map<string, number>();
-  let out = <string[]>[];
+  let out: string[] = [];
   const filteredFixesAndDiagnostics = codeFixesAndDiagnostics.filter((codeFixAndDiagnostic) => {
     if (codeFixAndDiagnostic.fix && fixNames.includes(codeFixAndDiagnostic.fix.fixName)) {
       const currentVal = fixCounter.get(codeFixAndDiagnostic.fix.fixName);
@@ -532,7 +536,7 @@ async function getUpdatedCodeFixesAndDiagnostics(codeFixesAndDiagnostics: FixAnd
   if (userInput === Choices.ACCEPT) {
     addToCodefixes(codefixes, [currentCodeFix]);
     if (showMultiple) {
-      codeFixesAndDiagnostics = removeMutilpleDiagnostics(codeFixesAndDiagnostics, Choices.ACCEPT)
+      codeFixesAndDiagnostics = removeMultipleDiagnostics(codeFixesAndDiagnostics, Choices.ACCEPT)
     }
     else {
       codeFixesAndDiagnostics.splice(0, count);
@@ -540,7 +544,7 @@ async function getUpdatedCodeFixesAndDiagnostics(codeFixesAndDiagnostics: FixAnd
   }
   else if (userInput === Choices.ACCEPTALL) {
     if (showMultiple) {
-      codeFixesAndDiagnostics = removeMutilpleDiagnostics(codeFixesAndDiagnostics);
+      codeFixesAndDiagnostics = removeMultipleDiagnostics(codeFixesAndDiagnostics);
     }
     let updatedFixesAndDiagnostics = codeFixesAndDiagnostics.filter((diagnosticAndFix) => diagnosticAndFix.diagnostic.code === currentDiagnostic.code);
     updatedFixesAndDiagnostics.map((diagnosticAndFix) => {
@@ -632,7 +636,7 @@ export interface ChangeDiagnostic {
 
 // Removes duplicate diagnostics if showMultiple = false
 // Also removes multiple code fixes for the diagnostic if the user accepts the first one or to accept all of that type
-export function removeMutilpleDiagnostics(codeFixesAndDiagnostics: FixAndDiagnostic[], choice?: Choices.ACCEPT): FixAndDiagnostic[] {
+export function removeMultipleDiagnostics(codeFixesAndDiagnostics: FixAndDiagnostic[], choice?: Choices.ACCEPT): FixAndDiagnostic[] {
   if (choice === Choices.ACCEPT) {
     for (let i = 1; i < codeFixesAndDiagnostics.length; i++) {
       let count = 1;
