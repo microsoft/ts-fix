@@ -9,7 +9,7 @@
     "src"
   ],
   "engines": {
-    "node": ">=10"
+    "node": ">=14.17"
   },
   "scripts": {
     "start": "tsc -p . --watch",
@@ -18,6 +18,7 @@
     "prepare": "tsc -p ."
   },
   "name": "ts-fix",
+  "private": true,
   "author": "Isabel Duan",
   "devDependencies": {
     "@types/diff": "^5.0.2",
@@ -37,7 +38,8 @@
     "import-cwd": "^3.0.0",
     "inquirer": "^8.0.0",
     "lodash": "^4.17.21",
-    "typescript": "4.9.0-dev.20220816",
+    "typescript": "^5.4.5",
     "yargs": "^16.2.0"
-  }
+  },
+  "packageManager": "npm@8.19.4+sha256.2667a1b8300f315d223e43c307fbe946eb8b97792af399424ef67ea9cb0a72f6"
 }
