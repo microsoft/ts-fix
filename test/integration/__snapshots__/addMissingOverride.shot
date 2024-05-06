@@ -11,7 +11,7 @@ exports[`integration tests addMissingOverride 1 1`] = `
   ],
   "logs": [
     "The project is being created...\\r\\n",
-    "Using TypeScript 4.9.0-dev.20220816",
+    "Using TypeScript 5.4.5",
     "\\r\\nFound 2 diagnostics with code 4114",
     "Found 2 codefixes with name fixOverrideModifier",
     "Fixes to be applied: 2\\r\\nNo applied fixes: 0\\r\\n",
