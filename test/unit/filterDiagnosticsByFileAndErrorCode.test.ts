@@ -1,7 +1,7 @@
 import { Diagnostic, DiagnosticCategory, SourceFile } from "typescript";
 import { filterDiagnosticsByFileAndErrorCode } from "../../src";
 
-const default_codes = [];
+const default_codes: number[] = [];
 
 function makeDiagnostic(code: number, fileName?: string, file?: SourceFile): Diagnostic {
     return {
@@ -24,8 +24,7 @@ function makeDiagnostic(code: number, fileName?: string, file?: SourceFile): Dia
 
 test("filterDiagnosticsByFileAndErrorCode_noErrorsInOpt_noPaths", () => {
     const originalDiagnostics = [[makeDiagnostic(111), makeDiagnostic(222), makeDiagnostic(333)]];
-    const validFiles = [];
-    const results = filterDiagnosticsByFileAndErrorCode(originalDiagnostics, default_codes, validFiles);
+    const results = filterDiagnosticsByFileAndErrorCode(originalDiagnostics, default_codes, []);
     expect(results[0]).toEqual(originalDiagnostics);
     expect(results[1]).toEqual(["Found 3 diagnostics in 1 files"]);
 })

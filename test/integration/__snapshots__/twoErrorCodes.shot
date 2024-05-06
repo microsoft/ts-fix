@@ -10,7 +10,7 @@ exports[`integration tests twoErrorCodes 9 1`] = `
   ],
   "logs": [
     "The project is being created...\\r\\n",
-    "Using TypeScript 4.9.0-dev.20220816",
+    "Using TypeScript 5.4.5",
     "\\r\\nFound 2 diagnostics with code 4114",
     "\\r\\nFound 3 diagnostics with code 2352",
     "Found 4 codefixes",
