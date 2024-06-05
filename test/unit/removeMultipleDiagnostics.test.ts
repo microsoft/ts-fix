@@ -1,5 +1,5 @@
 import { CodeFixAction, DiagnosticCategory } from "typescript";
-import { Choices, FixAndDiagnostic, removeMutilpleDiagnostics } from "../../src";
+import { Choices, FixAndDiagnostic, removeMultipleDiagnostics } from "../../src";
 
 //This test is probably not be too effective since splice is being used
 function makeCodeFix(fixName: string, start: number, length: number): CodeFixAction {
@@ -36,7 +36,7 @@ test("removeDuplicatedFixes_twoEqualDiagnostics", () => {
     codefixes.forEach((codefix) => {
         fixesAndDiagnostics.push(makeFixAndDiagnostic(codefix, 435, 4, 5));
     })
-    const result = removeMutilpleDiagnostics(fixesAndDiagnostics);
+    const result = removeMultipleDiagnostics(fixesAndDiagnostics);
     expect(result).toEqual([fixesAndDiagnostics[0]]);
 });
 
@@ -46,7 +46,7 @@ test("removeDuplicatedFixes_threeEqualDiagnostics", () => {
     codefixes.forEach((codefix) => {
         fixesAndDiagnostics.push(makeFixAndDiagnostic(codefix, 435, 4, 5));
     })
-    const result = removeMutilpleDiagnostics(fixesAndDiagnostics);
+    const result = removeMultipleDiagnostics(fixesAndDiagnostics);
     expect(result).toEqual([fixesAndDiagnostics[0]]);
 });
 
@@ -57,7 +57,7 @@ test("removeDuplicatedFixes_manyEqualDiagnostics", () => {
         fixesAndDiagnostics.push(makeFixAndDiagnostic(makeCodeFix('fixOverrideModifier', 165, 0), 435, 4, 5));
         i++;
     }
-    const result = removeMutilpleDiagnostics(fixesAndDiagnostics);
+    const result = removeMultipleDiagnostics(fixesAndDiagnostics);
     expect(result).toEqual([fixesAndDiagnostics[0]]);
 });
 
@@ -70,7 +70,7 @@ test("removeDuplicatedFixes_allDifferentDiagnostics", () => {
     fixesAndDiagnostics.push(makeFixAndDiagnostic(codefixes[2], 4333, 5, 64));
     fixesAndDiagnostics.push(makeFixAndDiagnostic(codefixes[3], 764, 7, 64));
     fixesAndDiagnostics.push(makeFixAndDiagnostic(codefixes[4], 422, 2, 544));
-    const result = removeMutilpleDiagnostics(fixesAndDiagnostics);
+    const result = removeMultipleDiagnostics(fixesAndDiagnostics);
     expect(result).toEqual(fixesAndDiagnostics);
 });
 
@@ -79,7 +79,7 @@ test("removeDuplicatedFixes_twoEqualDiagnosticsAndOneDifferent", () => {
     fixesAndDiagnostics.push(makeFixAndDiagnostic(makeCodeFix('fixOverrideModifier', 165, 0), 435, 4, 5));
     fixesAndDiagnostics.push(makeFixAndDiagnostic(makeCodeFix('addConvertToUnknownForNonOverlappingTypes', 8, 9), 543, 4, 5));
     fixesAndDiagnostics.push(makeFixAndDiagnostic(makeCodeFix('fixOverrideModifier', 165, 0), 435, 4, 5));
-    const result = removeMutilpleDiagnostics(fixesAndDiagnostics);
+    const result = removeMultipleDiagnostics(fixesAndDiagnostics);
     expect(result).toEqual(fixesAndDiagnostics);
 });
 
@@ -95,14 +95,14 @@ test("removeDuplicatedFixes_someDifferentAndSomeDuplicatedDiagnostics", () => {
     fixesAndDiagnostics.push(makeFixAndDiagnostic(makeCodeFix('fixOverrideModifier', 165, 0), 435, 4, 5));
     fixesAndDiagnostics.push(makeFixAndDiagnostic(makeCodeFix('addConvertToUnknownForNonOverlappingTypes', 40, 73), 765, 44, 5));
     fixesAndDiagnostics.push(makeFixAndDiagnostic(makeCodeFix('fixOverrideModifier', 165, 0), 435, 4, 5));
-    const result = removeMutilpleDiagnostics(fixesAndDiagnostics);
+    const result = removeMultipleDiagnostics(fixesAndDiagnostics);
     expect(result).toEqual(fixesAndDiagnostics);
 });
 
 test("removeDuplicatedFixes_acceptOneOutofOne", () => {
     const fixesAndDiagnostics: FixAndDiagnostic[] = [];
     fixesAndDiagnostics.push(makeFixAndDiagnostic(makeCodeFix('fixOverrideModifier', 165, 0), 435, 4, 5));
-    const result = removeMutilpleDiagnostics(fixesAndDiagnostics, Choices.ACCEPT);
+    const result = removeMultipleDiagnostics(fixesAndDiagnostics, Choices.ACCEPT);
     expect(result).toEqual(fixesAndDiagnostics);
 });
 
@@ -119,7 +119,7 @@ test("removeDuplicatedFixes_acceptAllTheSameCode", () => {
     fixesAndDiagnostics.push(makeFixAndDiagnostic(makeCodeFix('fixOverrideModifier', 165, 0), 435, 4, 5));
     fixesAndDiagnostics.push(makeFixAndDiagnostic(makeCodeFix('addConvertToUnknownForNonOverlappingTypes', 40, 73), 435, 44, 5));
     fixesAndDiagnostics.push(makeFixAndDiagnostic(makeCodeFix('fixOverrideModifier', 165, 0), 435, 4, 5));
-    const result = removeMutilpleDiagnostics(fixesAndDiagnostics, Choices.ACCEPT);
+    const result = removeMultipleDiagnostics(fixesAndDiagnostics, Choices.ACCEPT);
     expect(result).toEqual(fixesAndDiagnostics);
 });
 
@@ -133,6 +133,6 @@ test("removeDuplicatedFixes_allTheSameCode", () => {
     fixesAndDiagnostics.push(makeFixAndDiagnostic(codefixes[2], 545, 4, 5));
     fixesAndDiagnostics.push(makeFixAndDiagnostic(codefixes[3], 435, 6, 5));
     fixesAndDiagnostics.push(makeFixAndDiagnostic(codefixes[4], 212, 4, 5));
-    const result = removeMutilpleDiagnostics(fixesAndDiagnostics, Choices.ACCEPT);
+    const result = removeMultipleDiagnostics(fixesAndDiagnostics, Choices.ACCEPT);
     expect(result).toEqual(fixesAndDiagnostics);
 });
