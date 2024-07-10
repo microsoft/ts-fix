@@ -38,7 +38,7 @@
     "import-cwd": "^3.0.0",
     "inquirer": "^8.0.0",
     "lodash": "^4.17.21",
-    "typescript": "^5.4.5",
+    "typescript": "^5.5.3",
     "yargs": "^16.2.0"
   },
   "packageManager": "npm@8.19.4+sha256.2667a1b8300f315d223e43c307fbe946eb8b97792af399424ef67ea9cb0a72f6"
