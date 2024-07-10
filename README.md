@@ -5,6 +5,7 @@ This tool is to automate the application of TypeScript codefixes across your Typ
 # Download
 If cloning from GitHub, after cloning, run
 ```
+npm install
 npm run build
 npm link
 ```
