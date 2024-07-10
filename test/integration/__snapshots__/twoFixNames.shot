@@ -10,7 +10,7 @@ exports[`integration tests twoFixNames 10 1`] = `
   ],
   "logs": [
     "The project is being created...\\r\\n",
-    "Using TypeScript 5.4.5",
+    "Using TypeScript 5.5.3",
     "\\r\\nFound 6 diagnostics in 9 files",
     "Found 2 codefixes with name fixOverrideModifier",
     "Found 2 codefixes with name addConvertToUnknownForNonOverlappingTypes",

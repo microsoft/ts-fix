@@ -9,7 +9,7 @@ exports[`integration tests addThreeUnknown 6 1`] = `
   ],
   "logs": [
     "The project is being created...\\r\\n",
-    "Using TypeScript 5.4.5",
+    "Using TypeScript 5.5.3",
     "\\r\\nFound 3 diagnostics with code 2352",
     "Found 2 codefixes",
     "Fixes to be applied: 2\\r\\nNo applied fixes: 0\\r\\n",
