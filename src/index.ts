@@ -435,7 +435,7 @@ export function getCodeFixesForFile(project: Project, diagnostics: readonly Diag
   // expects already filtered diagnostics
   const service = project.languageService;
   return flatMap(diagnostics, d => {
-    if (d.file && d.start && d.length) {
+    if (d.file && typeof d.start === "number" && d.length) {
       return service.getCodeFixesAtPosition(
         d.file.fileName,
         d.start,
