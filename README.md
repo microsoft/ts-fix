@@ -13,9 +13,17 @@ npm link
 
 
 # Example Usage
-`ts-fix -t path/to/tsconfig.json -f nameOfCodefix`
-`ts-fix -e 4114 --write`
-`ts-fix --interactiveMode --file relativePathToFile`
+```
+ts-fix -t path/to/tsconfig.json -f nameOfCodefix
+```
+
+```
+ts-fix -e 4114 --write
+```
+
+```
+ts-fix --interactiveMode --file relativePathToFile
+```
 
 # Flags 
 
