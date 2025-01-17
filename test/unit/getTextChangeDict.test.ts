@@ -27,8 +27,8 @@ const codefixes: CodeFixAction[] = [
 
 test("should merge text changes in order", () => {
     const result = getTextChangeDict(codefixes);
-    console.log(result.get('foo.ts'));
-    result.get('foo.ts');
-    expect(result).toBeDefined();
+    const changes = result.get('foo.ts');
+    const spanStarts = changes?.map(c => c.span.start);
+    expect(spanStarts).toEqual([1, 2, 3, 8]);
 })
 
