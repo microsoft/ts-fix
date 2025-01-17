@@ -462,18 +462,18 @@ function mergeChanges(arr1: TextChange[], arr2: TextChange[]): TextChange[] {
 
   while (i < arr1.length && j < arr2.length) {
     if (arr1[i].span.start < arr2[j].span.start) {
-        mergedArray.push(arr1[i]);
-        i++;
+      mergedArray.push(arr1[i]);
+      i++;
     } else {
-        mergedArray.push(arr2[j]);
-        j++;
+      mergedArray.push(arr2[j]);
+      j++;
     }
   }
 
   while (i < arr1.length) {
     mergedArray.push(arr1[i]);
     i++;
-}
+  }
 
   while (j < arr2.length) {
     mergedArray.push(arr2[j]);
