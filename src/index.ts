@@ -455,6 +455,34 @@ function getFileTextChangesFromCodeFix(codefix: CodeFixAction): readonly FileTex
   return codefix.changes;
 }
 
+function mergeChanges(arr1: TextChange[], arr2: TextChange[]): TextChange[] {
+  let mergedArray = [];
+  let i = 0; 
+  let j = 0;
+
+  // Traverse both arrays
+  while (i < arr1.length && j < arr2.length) {
+      if (arr1[i].span.start < arr2[j].span.start) {
+          mergedArray.push(arr1[i]);
+          i++;
+      } else {
+          mergedArray.push(arr2[j]);
+          j++;
+      }
+  }
+
+  while (i < arr1.length) {
+      mergedArray.push(arr1[i]);
+      i++;
+  }
+
+  while (j < arr2.length) {
+      mergedArray.push(arr2[j]);
+      j++;
+  }
+
+  return mergedArray;
+}
 export function getTextChangeDict(codefixes: readonly CodeFixAction[]): Map<string, TextChange[]> {
   let textChangeDict = new Map<string, TextChange[]>();
 
@@ -473,7 +501,7 @@ export function getTextChangeDict(codefixes: readonly CodeFixAction[]): Map<stri
       if (prevVal === undefined) {
         textChangeDict.set(key, value);
       } else {
-        textChangeDict.set(key, prevVal.concat(value));
+        textChangeDict.set(key, mergeChanges(prevVal, value));
       }
     }
   }
