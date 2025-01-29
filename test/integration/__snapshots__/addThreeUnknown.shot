@@ -11,9 +11,9 @@ exports[`integration tests addThreeUnknown 6 1`] = `
     "The project is being created...\\r\\n",
     "Using TypeScript 5.5.3",
     "\\r\\nFound 3 diagnostics with code 2352",
-    "Found 2 codefixes",
-    "Fixes to be applied: 2\\r\\nNo applied fixes: 0\\r\\n",
-    "\\r\\nFound 1 diagnostics with code 2352",
+    "Found 3 codefixes",
+    "Fixes to be applied: 3\\r\\nNo applied fixes: 0\\r\\n",
+    "\\r\\nNo diagnostics found with code 2352",
     "Found 0 codefixes",
     "No changes remaining for ts-fix"
   ],
