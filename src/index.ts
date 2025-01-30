@@ -934,11 +934,20 @@ function applyChangestoFile(originalContents: string, fixList: readonly TextChan
 }
 
 export function doTextChanges(fileText: string, textChanges: readonly TextChange[], isGetFileFixes?: boolean): string {
+  const tcs: TextChange[] = [];
+  // Remove duplicate text changes. Because we're getting quick fixes for the entire file, we can get duplicate text changes.
+  for (const tc of textChanges) {
+    const dup = tcs.find((t) => t.span.start === tc.span.start && t.span.length === tc.span.length && t.newText === tc.newText);
+    if (!dup) {
+      tcs.push(tc);
+    }
+  }
+
   // does js/ts do references? Or is it always a copy when you pass into a function
   // iterate through codefixes from back
-  for (let i = textChanges.length - 1; i >= 0; i--) {
+  for (let i = tcs.length - 1; i >= 0; i--) {
     // apply each codefix
-    fileText = doTextChangeOnString(fileText, textChanges[i], isGetFileFixes);
+    fileText = doTextChangeOnString(fileText, tcs[i], isGetFileFixes);
   }
   return fileText;
 }
