@@ -1,5 +1,6 @@
-import { filterCodeFixesByFixName, FixAndDiagnostic } from "../../src/index";
 import { CodeFixAction, DiagnosticCategory } from "typescript";
+import { expect, test } from "vitest";
+import { filterCodeFixesByFixName, FixAndDiagnostic } from "../../src/index";
 
 const codefixes: CodeFixAction[] = [
     {
@@ -43,7 +44,7 @@ const fixesAndDiagnostics: FixAndDiagnostic[] = [];
 
 codefixes.forEach((codefix) => {
     fixesAndDiagnostics.push({
-        fix: codefix, diagnostic: 
+        fix: codefix, diagnostic:
          {
             category: DiagnosticCategory.Error,
             code: 322,

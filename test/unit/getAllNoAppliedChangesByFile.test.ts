@@ -1,5 +1,6 @@
-import { getAllNoAppliedChangesByFile } from './../../src';
 import { CodeFixAction } from 'typescript';
+import { expect, test } from "vitest";
+import { getAllNoAppliedChangesByFile } from './../../src';
 
 const allNoAppliedChanges = new Map<string, Set<string>>;
 const noAppliedChanges: CodeFixAction[] = [

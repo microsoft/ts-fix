@@ -1,4 +1,5 @@
 import { Diagnostic, DiagnosticCategory, SourceFile } from "typescript";
+import { expect, test } from "vitest";
 import { filterDiagnosticsByFileAndErrorCode } from "../../src";
 
 const default_codes: number[] = [];

@@ -1,5 +1,6 @@
-import { doTextChangeOnString } from "../../src/index";
 import { TextChange } from "typescript";
+import { expect, test } from "vitest";
+import { doTextChangeOnString } from "../../src/index";
 
 test("textChangeOnString1", () => {
     const originalString = "012345";

@@ -1,6 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`integration tests twoErrorCodes 9 1`] = `
+exports[`integration tests twoErrorCodes 0`] = `
 {
   "cwd": "cases/twoErrorCodes",
   "args": [
@@ -9,14 +7,14 @@ exports[`integration tests twoErrorCodes 9 1`] = `
     "2352"
   ],
   "logs": [
-    "The project is being created...\\r\\n",
+    "The project is being created...\r\n",
     "Using TypeScript 5.5.3",
-    "\\r\\nFound 2 diagnostics with code 4114",
-    "\\r\\nFound 3 diagnostics with code 2352",
+    "\r\nFound 2 diagnostics with code 4114",
+    "\r\nFound 3 diagnostics with code 2352",
     "Found 5 codefixes",
-    "Fixes to be applied: 5\\r\\nNo applied fixes: 0\\r\\n",
-    "\\r\\nNo diagnostics found with code 4114",
-    "\\r\\nNo diagnostics found with code 2352",
+    "Fixes to be applied: 5\r\nNo applied fixes: 0\r\n",
+    "\r\nNo diagnostics found with code 4114",
+    "\r\nNo diagnostics found with code 2352",
     "Found 0 codefixes",
     "No changes remaining for ts-fix"
   ],

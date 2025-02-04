@@ -1,5 +1,6 @@
-import {  getTextChangeDict } from "../../src/index";
 import { CodeFixAction } from "typescript";
+import { expect, test } from "vitest";
+import { getTextChangeDict } from "../../src/index";
 
 const codefixes: CodeFixAction[] = [
     {
