@@ -562,8 +562,8 @@ function trimEndImpl(s: string) {
 const trimStringEnd = !!String.prototype.trimEnd ? ((s: string) => s.trimEnd()) : trimEndImpl;
 
 function formatCodeSpan(file: SourceFile, start: number, length: number, indent: string, host: Host) {
-    const { line: firstLine, character: firstLineChar } = getLineAndCharacterOfPosition(file, start);
-    const { line: lastLine, character: lastLineChar } = getLineAndCharacterOfPosition(file, start + length);
+    const { line: firstLine } = getLineAndCharacterOfPosition(file, start);
+    const { line: lastLine } = getLineAndCharacterOfPosition(file, start + length);
     const lastLineInFile = getLineAndCharacterOfPosition(file, file.text.length).line;
 
     const hasMoreThanFiveLines = (lastLine - firstLine) >= 4;

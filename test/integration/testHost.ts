@@ -67,6 +67,6 @@ export class TestHost implements Host {
 
     getCanonicalFileName(fileName: string) { return fileName.toLowerCase() }
 
-    getCurrentDirectory() { return process.cwd() }
+    getCurrentDirectory() { return this.cwd }
 
 }

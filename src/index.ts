@@ -1,13 +1,13 @@
+import { exec } from 'child_process';
+import { diffChars } from "diff";
+import * as fs from "fs";
+import inquirer from "inquirer";
+import os from "os";
 import path from "path";
 import { CodeFixAction, Diagnostic, FileTextChanges, formatDiagnosticsWithColorAndContext, SourceFile, TextChange } from "typescript";
-import os from "os";
-import _, { flatMap, cloneDeep, isEqual, map } from "lodash";
+import { isDeepStrictEqual } from "util";
 import { createProject, Project } from "./ts";
-import * as fs from "fs";
-import { diffChars } from "diff";
-import inquirer from "inquirer";
 import { formatDiagnosticsWithColorAndContextTsFix, formatFixesInTheSameSpan, formatFixOnADifferentLocation } from "./utilities";
-import { exec } from 'child_process';
 
 export interface Logger {
   (...args: any[]): void;
@@ -146,7 +146,7 @@ export const checkOptions = async (opt: Options): Promise<[string[], string[]]> 
   return [validFiles, invalidFiles];
 }
 
-// Print summary of the run at the end of the project 
+// Print summary of the run at the end of the project
 function printSummary(host: Host, opt: Options, invalidFiles: string[], allChangedFiles: Map<string, ChangedFile>, noAppliedChangesByFile: Map<string, Set<string>>): void {
   if (invalidFiles.length) {
     host.log(`${host.getNewLine()}The following file paths are invalid:`);
@@ -312,7 +312,7 @@ export async function getCodeFixesFromProject(project: Project, opt: Options, ho
     return fixesAndDiagnostics;
   });
 
-  const flatCodeFixesAndDiagnostics: FixAndDiagnostic[] = _.flatten(codefixesPerFile);
+  const flatCodeFixesAndDiagnostics: FixAndDiagnostic[] = codefixesPerFile.flat();
   let [filteredCodeFixesAndDiagnostics, filteredCodeFixByNameOut] = filterCodeFixesByFixName(flatCodeFixesAndDiagnostics, opt.fixName);
   filteredCodeFixByNameOut.forEach((s: string) => { host.log(s); });
   [fixesAndDiagnostics, noAppliedFixes] = getAppliedAndNoAppliedFixes(filteredCodeFixesAndDiagnostics);
@@ -387,12 +387,12 @@ export function filterDiagnosticsByFileAndErrorCode(diagnostics: (readonly Diagn
       filteredDiagnostics = filteredDiagnosticsForFile;
     }
     if (errorCodes.length) {
-      let errorCounter = new Map<number, number>();
-      let filteredDiagnosticsByError: Diagnostic[][] = [];
+      const errorCounter = new Map<number, number>();
+      const filteredDiagnosticsByError: Diagnostic[][] = [];
       for (let i = 0; i < diagnostics.length; i++) {
         // for every diagnostic list
         // get rid of not matched errors
-        const filteredDiagnostic = _.filter(filteredDiagnostics[i], function (d) {
+        const filteredDiagnostic = filteredDiagnostics[i]?.filter(function (d) {
           if (errorCodes.includes(d.code)) {
             const currentVal = errorCounter.get(d.code);
             if (currentVal !== undefined) {
@@ -404,7 +404,7 @@ export function filterDiagnosticsByFileAndErrorCode(diagnostics: (readonly Diagn
           }
           return false;
         });
-        if (filteredDiagnostic.length) {
+        if (filteredDiagnostic?.length) {
           filteredDiagnosticsByError.push(filteredDiagnostic);
         }
       }
@@ -421,7 +421,7 @@ export function filterDiagnosticsByFileAndErrorCode(diagnostics: (readonly Diagn
     return [filteredDiagnostics, returnStrings]
   }
   // otherwise, use all errors
-  return [filteredDiagnostics, [`Found ${_.reduce(filteredDiagnostics.map((d: { length: any; }) => d.length), function (sum, n) {
+  return [filteredDiagnostics, [`Found ${filteredDiagnostics.map((d) => d.length).reduce(function (sum, n) {
     return sum + n;
   }, 0)} diagnostics in ${diagnostics.length} files`]];
 }
@@ -434,7 +434,7 @@ export interface FixAndDiagnostic {
 export function getCodeFixesForFile(project: Project, diagnostics: readonly Diagnostic[]): FixAndDiagnostic[] {
   // expects already filtered diagnostics
   const service = project.languageService;
-  return flatMap(diagnostics, d => {
+  return diagnostics.flatMap(d => {
     if (d.file && typeof d.start === "number" && d.length) {
       return service.getCodeFixesAtPosition(
         d.file.fileName,
@@ -457,7 +457,7 @@ function getFileTextChangesFromCodeFix(codefix: CodeFixAction): readonly FileTex
 
 function mergeChanges(arr1: TextChange[], arr2: TextChange[]): TextChange[] {
   let mergedArray = [];
-  let i = 0; 
+  let i = 0;
   let j = 0;
 
   while (i < arr1.length && j < arr2.length) {
@@ -595,11 +595,11 @@ async function getUpdatedCodeFixesAndDiagnostics(codeFixesAndDiagnostics: FixAnd
   }
   else {
     if (codeFixesAndDiagnostics.filter((codeFixAndDiagnostic) => {
-      let newText = map(codeFixAndDiagnostic.fix.changes[0].textChanges, 'newText').join(" ").trim();
+      const newText = codeFixAndDiagnostic.fix.changes[0].textChanges.map(i => i.newText).join(" ").trim();
       return `"${codeFixAndDiagnostic.fix.fixName}" fix with new text "${newText}"`;;
     })) {
       addToCodefixes(codefixes, [codeFixesAndDiagnostics.filter((codeFixAndDiagnostic) => {
-        let newText = map(codeFixAndDiagnostic.fix.changes[0].textChanges, 'newText').join(" ").trim();
+        const newText = codeFixAndDiagnostic.fix.changes[0].textChanges.map(i => i.newText).join(" ").trim();
         return `"${codeFixAndDiagnostic.fix.fixName}" fix with new text "${newText}"`;;
       })[0].fix]);
       codeFixesAndDiagnostics.splice(0, count);
@@ -632,7 +632,7 @@ async function getUserPickFromMultiple(args: { codefix?: CodeFixAction, currentF
   else if (args.isSameSpan && args.currentFixesAndDiagnostics) {
     message = `Which fix would you like to apply?`;
     choices = args.currentFixesAndDiagnostics.map((codeFixAndDiagnostic) => {
-      let newText = map(codeFixAndDiagnostic.fix.changes[0].textChanges, 'newText').join(" ").trim();
+      const newText =codeFixAndDiagnostic.fix.changes[0].textChanges.map(i => i.newText).join(" ").trim();
       return `"${codeFixAndDiagnostic.fix.fixName}" fix with new text "${newText}"`;
     });
   }
@@ -697,7 +697,7 @@ export function removeMultipleDiagnostics(codeFixesAndDiagnostics: FixAndDiagnos
 export function removeDuplicatedFixes(codeFixesAndDiagnostics: FixAndDiagnostic[]): FixAndDiagnostic[] {
   for (let i = 0; i < codeFixesAndDiagnostics.length; i++) {
     for (let j = i + 1; j < codeFixesAndDiagnostics.length; j++) {
-      if (i !== j && isEqual(codeFixesAndDiagnostics[i].fix, codeFixesAndDiagnostics[j].fix) && isEqual(codeFixesAndDiagnostics[i].diagnostic.messageText, codeFixesAndDiagnostics[j].diagnostic.messageText)) {
+      if (i !== j && isDeepStrictEqual(codeFixesAndDiagnostics[i].fix, codeFixesAndDiagnostics[j].fix) && isDeepStrictEqual(codeFixesAndDiagnostics[i].diagnostic.messageText, codeFixesAndDiagnostics[j].diagnostic.messageText)) {
         codeFixesAndDiagnostics.splice(j, 1);
         j = j - 1;
       }
@@ -709,16 +709,16 @@ export function removeDuplicatedFixes(codeFixesAndDiagnostics: FixAndDiagnostic[
 function getSecondDiagnostic(project: Project, fileName: string, currentCodeFix: CodeFixAction, currentTextChanges: readonly TextChange[]): ChangeDiagnostic {
   let secondDiagnostic: ChangeDiagnostic = {};
   let secondFileContents = undefined;
-  let secondFileCurrentLineMap = undefined;
+  // let secondFileCurrentLineMap = undefined;
   const newSourceFile = project.program.getSourceFile(fileName);
-  const secondSourceFile = cloneDeep(newSourceFile)
+  const secondSourceFile = structuredClone(newSourceFile)
   if (secondSourceFile) {
     secondDiagnostic.file = secondSourceFile;
     secondDiagnostic.start = currentCodeFix.changes[0].textChanges[0].span.start;
     secondDiagnostic.length = currentCodeFix.changes[0].textChanges[0].newText.length;
   }
   secondFileContents = secondSourceFile ? secondSourceFile.text : undefined;
-  secondFileCurrentLineMap = secondSourceFile ? (secondSourceFile as any).lineMap : undefined;
+  // secondFileCurrentLineMap = secondSourceFile ? (secondSourceFile as any).lineMap : undefined;
   (secondSourceFile as any).lineMap = undefined;
   if (secondFileContents) {
     const newFileContents = applyChangestoFile(secondFileContents, currentTextChanges, true);
@@ -749,7 +749,7 @@ function isAdditionalFixInTheSameLine(codeFixesAndDiagnostics: FixAndDiagnostic[
     return firstDiagnosticAndFix.diagnostic.messageText !== secondDiagnosticAndFix.diagnostic.messageText
       && firstDiagnosticAndFix.fix.changes[0].fileName === secondDiagnosticAndFix.fix.changes[0].fileName
       && firstDiagnosticAndFix.fix.changes[0].textChanges.length === secondDiagnosticAndFix.fix.changes[0].textChanges.length
-      && isEqual(firstDiagnosticAndFix.fix.changes[0].textChanges, secondDiagnosticAndFix.fix.changes[0].textChanges);
+      && isDeepStrictEqual(firstDiagnosticAndFix.fix.changes[0].textChanges, secondDiagnosticAndFix.fix.changes[0].textChanges);
   }
   return false;
 }
@@ -998,16 +998,6 @@ function compareContentsAndLog(str1: string, str2: string): string {
   return middleString;
 }
 
-function hasOnlyEmptyLists(m: ReadonlyMap<any, readonly any[]>): boolean {
-  let arrayLength = 0;
-  for (const [_, entries] of m.entries()) {
-    if (entries.length) {
-      arrayLength++;
-    }
-  }
-  return arrayLength > 0 ? false : true;
-}
-
 export function getFileName(filePath: string): string {
   return path.basename(filePath);
 }
@@ -1018,7 +1008,7 @@ export function getDirectory(filePath: string): string {
 
 export function getRelativePath(filePath: string, opt: Options): string {
   // this doesn't work when tsconfig or filepath is not passed in as absolute...
-  // as a result getOutputFilePath does not work for the non-replace option 
+  // as a result getOutputFilePath does not work for the non-replace option
   return path.relative(getDirectory(opt.tsconfig), path.resolve(filePath));
 }
 
