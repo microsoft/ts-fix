@@ -1,6 +1,7 @@
-import { getOutputFilePath } from "../../src/index";
-import { makeOptions } from "../../src/cli";
 import path from "path";
+import { expect, test } from "vitest";
+import { makeOptions } from "../../src/cli";
+import { getOutputFilePath } from "../../src/index";
 
 test("outputFileName_replace", () => {
     const dir = __dirname;

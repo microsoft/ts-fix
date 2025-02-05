@@ -1,6 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`integration tests addMissingOverride 1 1`] = `
+exports[`integration tests addMissingOverride 0`] = `
 {
   "cwd": "cases/addMissingOverride",
   "args": [
@@ -10,12 +8,12 @@ exports[`integration tests addMissingOverride 1 1`] = `
     "fixOverrideModifier"
   ],
   "logs": [
-    "The project is being created...\\r\\n",
+    "The project is being created...\r\n",
     "Using TypeScript 5.5.3",
-    "\\r\\nFound 2 diagnostics with code 4114",
+    "\r\nFound 2 diagnostics with code 4114",
     "Found 2 codefixes with name fixOverrideModifier",
-    "Fixes to be applied: 2\\r\\nNo applied fixes: 0\\r\\n",
-    "\\r\\nNo diagnostics found with code 4114",
+    "Fixes to be applied: 2\r\nNo applied fixes: 0\r\n",
+    "\r\nNo diagnostics found with code 4114",
     "No codefixes found with name fixOverrideModifier",
     "No changes remaining for ts-fix"
   ],

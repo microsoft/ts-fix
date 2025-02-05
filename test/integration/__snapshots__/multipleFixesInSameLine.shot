@@ -1,6 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`integration tests multipleFixesInSameLine 7 1`] = `
+exports[`integration tests multipleFixesInSameLine 0`] = `
 {
   "cwd": "cases/multipleFixesInSameLine",
   "args": [
@@ -8,9 +6,9 @@ exports[`integration tests multipleFixesInSameLine 7 1`] = `
     "7044"
   ],
   "logs": [
-    "The project is being created...\\r\\n",
+    "The project is being created...\r\n",
     "Using TypeScript 5.5.3",
-    "\\r\\nNo diagnostics found with code 7044",
+    "\r\nNo diagnostics found with code 7044",
     "Found 0 codefixes",
     "No changes remaining for ts-fix"
   ],

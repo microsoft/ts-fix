@@ -1,4 +1,5 @@
 import { CodeFixAction, DiagnosticCategory } from "typescript";
+import { expect, test } from "vitest";
 import { FixAndDiagnostic, removeDuplicatedFixes } from "../../src";
 
 //This test is probably not be too effective since splice is being used
