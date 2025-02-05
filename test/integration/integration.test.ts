@@ -45,9 +45,9 @@ expect.addSnapshotSerializer({
           dataType: 'Map',
           value: Array.from(value.entries()).map(([fileName, value]) => {
             if (typeof value === "string") {
-              return [normalizeSlashes(fileName), normalizeLineEndings(value)]
+              return [normalizeSlashes(fileName), normalizeLineEndings(value)];
             }
-            return [normalizeSlashes(path.relative(snapshot.dirname, fileName)), normalizeTextChange(value)]
+            return [normalizeSlashes(path.relative(snapshot.dirname, fileName)), normalizeTextChange(value)];
           }),
         };
       } else {
@@ -61,11 +61,11 @@ expect.addSnapshotSerializer({
       logs: snapshot.logs,
       remainingChanges: snapshot.changes,
       filesWritten: snapshot.filesWritten
-    }, replacer, 2)
+    }, replacer, 2);
 
     return `exports[\`integration tests ${snapshot.testName} ${depth}\`] = \`\n${snapshotValue}\n\`;`;
   }
-})
+});
 
 const cases = fs.readdirSync(path.resolve(__dirname, "cases")).flatMap(dirName => {
   const commands = fs.readFileSync(path.resolve(__dirname, "cases", dirName, "cmd.txt"), "utf8").split(/\r?\n/);
