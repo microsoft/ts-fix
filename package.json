@@ -35,8 +35,5 @@
     "typescript": "^5.5.3",
     "yargs": "^16.2.0"
   },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.34.8"
-  },
   "packageManager": "npm@8.19.4+sha256.2667a1b8300f315d223e43c307fbe946eb8b97792af399424ef67ea9cb0a72f6"
 }
