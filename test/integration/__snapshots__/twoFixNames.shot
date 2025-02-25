@@ -1,6 +1,3 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`integration tests twoFixNames 10 1`] = `
 {
   "cwd": "cases/twoFixNames",
   "args": [
@@ -9,13 +6,13 @@ exports[`integration tests twoFixNames 10 1`] = `
     "addConvertToUnknownForNonOverlappingTypes"
   ],
   "logs": [
-    "The project is being created...\\r\\n",
+    "The project is being created...\r\n",
     "Using TypeScript 5.5.3",
-    "\\r\\nFound 6 diagnostics in 9 files",
+    "\r\nFound 6 diagnostics in 9 files",
     "Found 2 codefixes with name fixOverrideModifier",
     "Found 3 codefixes with name addConvertToUnknownForNonOverlappingTypes",
-    "Fixes to be applied: 5\\r\\nNo applied fixes: 0\\r\\n",
-    "\\r\\nFound 1 diagnostics in 9 files",
+    "Fixes to be applied: 5\r\nNo applied fixes: 0\r\n",
+    "\r\nFound 1 diagnostics in 9 files",
     "No codefixes found with name fixOverrideModifier",
     "No codefixes found with name addConvertToUnknownForNonOverlappingTypes",
     "No changes remaining for ts-fix"
@@ -26,4 +23,3 @@ exports[`integration tests twoFixNames 10 1`] = `
     "value": []
   }
 }
-`;

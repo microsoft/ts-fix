@@ -1,5 +1,6 @@
-import { getDirectory,getFileName } from "../../src/index";
 import path from "path";
+import { expect, test } from "vitest";
+import { getDirectory, getFileName } from "../../src/index";
 
 const cwd = process.cwd();
 
@@ -23,8 +24,8 @@ test("getDirectory", () => {
 
 // test("getRelativePath", () => {
     // expect(getRelativePath(fileList[0], opt_default)).toEqual("file1.ts");
-    // 
-    // test issue: 
+    //
+    // test issue:
     // expect(getRelativePath(fileList[1], opt_default)).toEqual(path.normalize("src/file2.ts"));
     // Expected: "src\\file2.ts"
     // Received: "..\\..\\..\\src\\file2.ts"

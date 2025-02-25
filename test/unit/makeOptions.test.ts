@@ -1,4 +1,5 @@
 import path from "path";
+import { expect, test } from "vitest";
 import { makeOptions } from "../../src/cli";
 
 // TODO: uhh the defult cwd may not nessssrily resolve to correct path on non windows

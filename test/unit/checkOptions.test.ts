@@ -1,11 +1,12 @@
+import { expect, test } from "vitest";
 import { checkOptions } from "../../src";
 import { makeOptions } from "../../src/cli";
 
 const cwd = __dirname;
 
-test("checkOptions_emptyFilePath", () => {
+test("checkOptions_emptyFilePath", async () => {
     const createdOption = makeOptions(cwd, []);
-    expect(checkOptions(createdOption)).resolves.toEqual([[], []]);
+    await expect(checkOptions(createdOption)).resolves.toEqual([[], []]);
 });
 
 test('checkOptions_oneInvalidFilePath', async () => {
@@ -18,7 +19,7 @@ test('checkOptions_oneValidFilePath', async () => {
     try {
         await checkOptions(createdOption);
     } catch (e) {
-        expect(checkOptions(createdOption)).rejects.toThrow(e as Error);
+        await expect(checkOptions(createdOption)).rejects.toThrow(e as Error);
     }
 });
 
@@ -27,7 +28,7 @@ test("checkOptions_manyFilePaths", async () => {
     try {
         await checkOptions(createdOption);
     } catch (e) {
-        expect(checkOptions(createdOption)).rejects.toThrow(e as Error);
+        await expect(checkOptions(createdOption)).rejects.toThrow(e as Error);
     }
 });
 
@@ -36,7 +37,7 @@ test("checkOptions_oneValidOneInvalidPath", async () => {
     try {
         await checkOptions(createdOption);
     } catch (e) {
-        expect(checkOptions(createdOption)).rejects.toThrow(e as Error);
+        await expect(checkOptions(createdOption)).rejects.toThrow(e as Error);
     }
 });
 
@@ -45,6 +46,6 @@ test("checkOptions_manyValidManyInvalidPaths", async () => {
     try {
         await checkOptions(createdOption);
     } catch (e) {
-        expect(checkOptions(createdOption)).rejects.toThrow(e as Error);
+        await expect(checkOptions(createdOption)).rejects.toThrow(e as Error);
     }
 });
