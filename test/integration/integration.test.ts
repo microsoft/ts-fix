@@ -8,7 +8,6 @@ import { normalizeLineEndings, normalizeSlashes, normalizeTextChange, TestHost }
 
 interface Snapshot {
   dirname: string;
-  testName: string;
   cwd: string;
   args: string[];
   logs: string[];
@@ -16,14 +15,13 @@ interface Snapshot {
   filesWritten: Map<string, string>;
 }
 
-async function baselineCLI(cwd: string, args: string[], testName: string): Promise<Snapshot> {
+async function baselineCLI(cwd: string, args: string[]): Promise<Snapshot> {
   const host = new TestHost(cwd);
   const options = makeOptions(cwd, args);
   await codefixProject(options, host);
 
   const snapshot: Snapshot = {
     dirname: __dirname,
-    testName,
     cwd: normalizeSlashes(path.relative(__dirname, cwd)),
     args,
     logs: host.getLogs(),
@@ -76,7 +74,7 @@ const cases = fs.readdirSync(path.resolve(__dirname, "cases")).flatMap(dirName =
 describe("integration tests", () => {
   test.each(cases)("%s %#", async (dirName, args) => {
     const cwd = path.resolve(__dirname, "cases", dirName);
-    const snapshot = await baselineCLI(path.posix.normalize(cwd), args, dirName);
+    const snapshot = await baselineCLI(path.posix.normalize(cwd), args);
     await expect(snapshot).toMatchFileSnapshot(path.resolve(__dirname, '__snapshots__', dirName + ".shot"));
   });
 });
