@@ -1,4 +1,3 @@
-exports[`integration tests addMissingOverride 0`] = `
 {
   "cwd": "cases/addMissingOverride",
   "args": [
@@ -23,4 +22,3 @@ exports[`integration tests addMissingOverride 0`] = `
     "value": []
   }
 }
-`;

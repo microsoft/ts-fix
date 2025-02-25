@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import ts from "typescript";
-import { describe, expect, test, } from "vitest";
+import { describe, expect, test } from "vitest";
 import { codefixProject } from "../../src";
 import { makeOptions } from "../../src/cli";
 import { normalizeLineEndings, normalizeSlashes, normalizeTextChange, TestHost } from "./testHost";
@@ -38,7 +38,7 @@ expect.addSnapshotSerializer({
   test(snapshot: Snapshot) {
     return !!snapshot.cwd && !!snapshot.args && !!snapshot.logs && !!snapshot.changes && !!snapshot.filesWritten;
   },
-  serialize(snapshot: Snapshot, _config, _indentation, depth, _refs, _printer) {
+  serialize(snapshot: Snapshot) {
     function replacer(_key: string, value: any) {
       if (value instanceof Map) {
         return {
@@ -63,7 +63,7 @@ expect.addSnapshotSerializer({
       filesWritten: snapshot.filesWritten
     }, replacer, 2);
 
-    return `exports[\`integration tests ${snapshot.testName} ${depth}\`] = \`\n${snapshotValue}\n\`;`;
+    return snapshotValue + "\n";
   }
 });
 

@@ -1,4 +1,3 @@
-exports[`integration tests twoFixNames 0`] = `
 {
   "cwd": "cases/twoFixNames",
   "args": [
@@ -24,4 +23,3 @@ exports[`integration tests twoFixNames 0`] = `
     "value": []
   }
 }
-`;
