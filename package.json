@@ -29,7 +29,6 @@
   },
   "dependencies": {
     "diff": "^5.2.0",
-    "git-status": "^1.0.10",
     "import-cwd": "^3.0.0",
     "inquirer": "^8.0.0",
     "lodash": "^4.17.21",
