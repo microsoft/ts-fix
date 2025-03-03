@@ -74,7 +74,7 @@ export function makeOptions(cwd: string, args: string[]): Options {
             type: "boolean",
             default: false
         })
-        .argv;
+        .parseSync();
     return {
         cwd,
         errorCode,
