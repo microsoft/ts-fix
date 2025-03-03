@@ -2,7 +2,9 @@
   "cwd": "cases/addMissingOverrideByFixName",
   "args": [
     "-f",
-    "fixOverrideModifier"
+    "fixOverrideModifier",
+    "-w",
+    "--ignoreGitStatus"
   ],
   "logs": [
     "The project is being created...\r\n",
@@ -12,11 +14,18 @@
     "Fixes to be applied: 2\r\nNo applied fixes: 0\r\n",
     "\r\nFound 0 diagnostics in 8 files",
     "No codefixes found with name fixOverrideModifier",
-    "No changes remaining for ts-fix"
+    "No changes remaining for ts-fix",
+    "\r\nChanges were made in the following files:",
+    "Updated index.ts"
   ],
   "remainingChanges": [],
   "filesWritten": {
     "dataType": "Map",
-    "value": []
+    "value": [
+      [
+        "index.ts",
+        "class Base {\n  m() {}\n}\n\nclass Derived extends Base {\n  override m() {}\n}\n\nclass MoreDerived extends Derived {\n  override m() {}\n}\n"
+      ]
+    ]
   }
 }

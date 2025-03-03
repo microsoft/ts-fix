@@ -2,7 +2,9 @@
   "cwd": "cases/addMissingOverrideByError",
   "args": [
     "-e",
-    "4114"
+    "4114",
+    "-w",
+    "--ignoreGitStatus"
   ],
   "logs": [
     "The project is being created...\r\n",
@@ -12,11 +14,18 @@
     "Fixes to be applied: 2\r\nNo applied fixes: 0\r\n",
     "\r\nNo diagnostics found with code 4114",
     "Found 0 codefixes",
-    "No changes remaining for ts-fix"
+    "No changes remaining for ts-fix",
+    "\r\nChanges were made in the following files:",
+    "Updated index.ts"
   ],
   "remainingChanges": [],
   "filesWritten": {
     "dataType": "Map",
-    "value": []
+    "value": [
+      [
+        "index.ts",
+        "class Base {\n  m() {}\n}\n\nclass Derived extends Base {\n  override m() {}\n}\n\nclass MoreDerived extends Derived {\n  override m() {}\n}\n"
+      ]
+    ]
   }
 }

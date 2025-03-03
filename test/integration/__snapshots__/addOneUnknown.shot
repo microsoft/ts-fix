@@ -2,7 +2,9 @@
   "cwd": "cases/addOneUnknown",
   "args": [
     "-e",
-    "2352"
+    "2352",
+    "-w",
+    "--ignoreGitStatus"
   ],
   "logs": [
     "The project is being created...\r\n",
@@ -12,11 +14,18 @@
     "Fixes to be applied: 1\r\nNo applied fixes: 0\r\n",
     "\r\nNo diagnostics found with code 2352",
     "Found 0 codefixes",
-    "No changes remaining for ts-fix"
+    "No changes remaining for ts-fix",
+    "\r\nChanges were made in the following files:",
+    "Updated index.ts"
   ],
   "remainingChanges": [],
   "filesWritten": {
     "dataType": "Map",
-    "value": []
+    "value": [
+      [
+        "index.ts",
+        "<object><unknown>\"words\";"
+      ]
+    ]
   }
 }

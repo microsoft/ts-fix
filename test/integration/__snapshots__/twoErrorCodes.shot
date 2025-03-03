@@ -3,7 +3,9 @@
   "args": [
     "-e",
     "4114",
-    "2352"
+    "2352",
+    "-w",
+    "--ignoreGitStatus"
   ],
   "logs": [
     "The project is being created...\r\n",
@@ -15,11 +17,23 @@
     "\r\nNo diagnostics found with code 4114",
     "\r\nNo diagnostics found with code 2352",
     "Found 0 codefixes",
-    "No changes remaining for ts-fix"
+    "No changes remaining for ts-fix",
+    "\r\nChanges were made in the following files:",
+    "Updated addoverrides.ts",
+    "Updated addunknowns.ts"
   ],
   "remainingChanges": [],
   "filesWritten": {
     "dataType": "Map",
-    "value": []
+    "value": [
+      [
+        "addoverrides.ts",
+        "class Base {\n  m() {}\n}\n\nclass Derived extends Base {\n  override m() {}\n}\n\nclass MoreDerived extends Derived {\n  override m() {}\n}\n"
+      ],
+      [
+        "addunknowns.ts",
+        "<string><unknown>[\"words\"];\n\n<object><unknown>\"words\";\n\n<string><unknown>0 * (4 + 3) / 100;"
+      ]
+    ]
   }
 }
