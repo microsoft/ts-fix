@@ -3,7 +3,9 @@
   "args": [
     "-f",
     "fixOverrideModifier",
-    "addConvertToUnknownForNonOverlappingTypes"
+    "addConvertToUnknownForNonOverlappingTypes",
+    "-w",
+    "--ignoreGitStatus"
   ],
   "logs": [
     "The project is being created...\r\n",
@@ -15,11 +17,23 @@
     "\r\nFound 1 diagnostics in 9 files",
     "No codefixes found with name fixOverrideModifier",
     "No codefixes found with name addConvertToUnknownForNonOverlappingTypes",
-    "No changes remaining for ts-fix"
+    "No changes remaining for ts-fix",
+    "\r\nChanges were made in the following files:",
+    "Updated addoverrides.ts",
+    "Updated addunknowns.ts"
   ],
   "remainingChanges": [],
   "filesWritten": {
     "dataType": "Map",
-    "value": []
+    "value": [
+      [
+        "addoverrides.ts",
+        "class Base {\n  m() {}\n}\n\nclass Derived extends Base {\n  override m() {}\n}\n\nclass MoreDerived extends Derived {\n  override m() {}\n}\n"
+      ],
+      [
+        "addunknowns.ts",
+        "<string><unknown>[\"words\"];\n\n<object><unknown>\"words\";\n\n<string><unknown>0 * (4 + 3) / 100;"
+      ]
+    ]
   }
 }

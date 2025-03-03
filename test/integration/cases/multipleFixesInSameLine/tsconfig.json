@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
     "types": [],
-    "noImplicitOverride": true
+    "noImplicitAny": true
   }
 }

@@ -2,18 +2,30 @@
   "cwd": "cases/multipleFixesInSameLine",
   "args": [
     "-e",
-    "7044"
+    "7006",
+    "-w",
+    "--ignoreGitStatus"
   ],
   "logs": [
     "The project is being created...\r\n",
     "Using TypeScript 5.5.3",
-    "\r\nNo diagnostics found with code 7044",
+    "\r\nFound 2 diagnostics with code 7006",
+    "Found 2 codefixes",
+    "Fixes to be applied: 2\r\nNo applied fixes: 0\r\n",
+    "\r\nNo diagnostics found with code 7006",
     "Found 0 codefixes",
-    "No changes remaining for ts-fix"
+    "No changes remaining for ts-fix",
+    "\r\nChanges were made in the following files:",
+    "Updated index.ts"
   ],
   "remainingChanges": [],
   "filesWritten": {
     "dataType": "Map",
-    "value": []
+    "value": [
+      [
+        "index.ts",
+        "function (a: any, b: any) {\n  return a + b;\n}"
+      ]
+    ]
   }
 }
