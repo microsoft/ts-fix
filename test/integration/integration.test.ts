@@ -65,16 +65,19 @@ expect.addSnapshotSerializer({
   }
 });
 
-const cases = fs.readdirSync(path.resolve(__dirname, "cases")).flatMap(dirName => {
-  const commands = fs.readFileSync(path.resolve(__dirname, "cases", dirName, "cmd.txt"), "utf8").split(/\r?\n/);
-  // Split cmd.txt by line, then into space-separated args, and leave off the leading `ts-fix`
-  return commands.filter(c => c.trim().length > 0).map(c => c.split(" ").slice(1)).map((args): [string, string[]] => [dirName, args]);
-});
 
 describe("integration tests", () => {
-  test.each(cases)("%s %#", async (dirName, args) => {
-    const cwd = path.resolve(__dirname, "cases", dirName);
-    const snapshot = await baselineCLI(path.posix.normalize(cwd), args);
-    await expect(snapshot).toMatchFileSnapshot(path.resolve(__dirname, '__snapshots__', dirName + ".shot"));
+  const casesDir = path.resolve(__dirname, "cases")
+  const cases = fs.readdirSync(casesDir);
+
+  test.each(cases)("%s", async (dirName) => {
+    const cwd = path.resolve(casesDir, dirName);
+
+    const cmdFile = fs.readFileSync(path.resolve(cwd, "cmd.txt"), "utf8");
+    // Split cmd.txt by line, then into space-separated args, and leave off the leading `ts-fix`
+    const commands = cmdFile.split(/\r?\n|\s/).map(c => c.trim()).filter(c => c.length > 0).slice(1).concat("-w", "--ignoreGitStatus");
+
+    const snapshot = await baselineCLI(path.posix.normalize(cwd), commands);
+    await expect(snapshot).toMatchFileSnapshot(path.resolve(__dirname, '__snapshots__', `${dirName}.shot`));
   });
 });

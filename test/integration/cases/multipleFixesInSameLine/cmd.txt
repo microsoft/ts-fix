@@ -1,1 +1,1 @@
-ts-fix -e 7044
+ts-fix -e 7006

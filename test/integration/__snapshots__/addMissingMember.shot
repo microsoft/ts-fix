@@ -2,7 +2,9 @@
   "cwd": "cases/addMissingMember",
   "args": [
     "-e",
-    "2339"
+    "2339",
+    "-w",
+    "--ignoreGitStatus"
   ],
   "logs": [
     "The project is being created...\r\n",
@@ -12,7 +14,8 @@
     "Fixes to be applied: 0\r\nNo applied fixes: 4\r\n",
     "No changes remaining for ts-fix",
     "\r\nThe fixes not applied by ts-fix for this project are:",
-    "fixMissingMember types.ts"
+    "fixMissingMember types.ts",
+    "\r\nNo changes made in any files"
   ],
   "remainingChanges": [],
   "filesWritten": {
