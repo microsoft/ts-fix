@@ -21,19 +21,19 @@
   "private": true,
   "author": "Isabel Duan",
   "devDependencies": {
-    "@types/diff": "^5.2.1",
-    "@types/inquirer": "^8.2.1",
-    "@types/lodash": "^4.17.1",
-    "@types/yargs": "^15.0.13",
+    "@types/diff": "^7.0.1",
+    "@types/inquirer": "^8.2.10",
+    "@types/lodash": "^4.17.16",
+    "@types/yargs": "^17.0.33",
     "vitest": "^3.0.7"
   },
   "dependencies": {
-    "diff": "^5.2.0",
+    "diff": "^7.0.0",
     "import-cwd": "^3.0.0",
-    "inquirer": "^8.0.0",
+    "inquirer": "^8.2.6",
     "lodash": "^4.17.21",
     "typescript": "^5.5.3",
-    "yargs": "^16.2.0"
+    "yargs": "^17.7.2"
   },
   "packageManager": "npm@8.19.4+sha256.2667a1b8300f315d223e43c307fbe946eb8b97792af399424ef67ea9cb0a72f6"
 }
