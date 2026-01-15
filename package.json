@@ -28,7 +28,7 @@
     "vitest": "^3.0.7"
   },
   "dependencies": {
-    "diff": "^7.0.0",
+    "diff": "^8.0.3",
     "import-cwd": "^3.0.0",
     "inquirer": "^8.2.6",
     "lodash": "^4.17.21",
