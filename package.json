@@ -25,7 +25,7 @@
     "@types/inquirer": "^8.2.10",
     "@types/lodash": "^4.17.16",
     "@types/yargs": "^17.0.33",
-    "vitest": "^3.0.7"
+    "vitest": "^3.2.6"
   },
   "dependencies": {
     "diff": "^7.0.0",
