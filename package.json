@@ -30,7 +30,7 @@
   "dependencies": {
     "diff": "^7.0.0",
     "import-cwd": "^3.0.0",
-    "inquirer": "^8.2.6",
+    "inquirer": "^8.2.7",
     "lodash": "^4.17.21",
     "typescript": "^5.5.3",
     "yargs": "^17.7.2"
